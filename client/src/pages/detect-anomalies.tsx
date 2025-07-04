@@ -25,6 +25,7 @@ export default function DetectAnomalies() {
   const [sensitivity, setSensitivity] = useState("medium");
   const [timeRange, setTimeRange] = useState("7d");
   const [anomalies, setAnomalies] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(null);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -48,9 +49,10 @@ export default function DetectAnomalies() {
     },
     onSuccess: (data) => {
       setAnomalies(data.anomalies || []);
+      setSummary(data.summary || null);
       toast({
         title: "Analysis Complete",
-        description: `Found ${data.anomaliesCount} potential anomalies.`,
+        description: `Found ${data.anomalies?.length || 0} potential anomalies.`,
       });
     },
     onError: (error) => {
@@ -81,26 +83,30 @@ export default function DetectAnomalies() {
     });
   };
 
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case "HIGH":
-        return <Badge variant="destructive">HIGH PRIORITY</Badge>;
-      case "MEDIUM":
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">MEDIUM PRIORITY</Badge>;
-      case "LOW":
-        return <Badge variant="default" className="bg-blue-100 text-blue-800">LOW PRIORITY</Badge>;
+  const getSeverityBadge = (severity: string) => {
+    switch (severity?.toLowerCase()) {
+      case "critical":
+        return <Badge variant="destructive">CRITICAL</Badge>;
+      case "high":
+        return <Badge variant="destructive">HIGH</Badge>;
+      case "medium":
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">MEDIUM</Badge>;
+      case "low":
+        return <Badge variant="default" className="bg-blue-100 text-blue-800">LOW</Badge>;
       default:
-        return <Badge variant="outline">{priority}</Badge>;
+        return <Badge variant="outline">{severity}</Badge>;
     }
   };
 
-  const getPriorityClass = (priority: string) => {
-    switch (priority) {
-      case "HIGH":
+  const getSeverityClass = (severity: string) => {
+    switch (severity?.toLowerCase()) {
+      case "critical":
+        return "border-red-500 bg-red-50";
+      case "high":
         return "border-red-200 bg-red-50";
-      case "MEDIUM":
+      case "medium":
         return "border-yellow-200 bg-yellow-50";
-      case "LOW":
+      case "low":
         return "border-blue-200 bg-blue-50";
       default:
         return "border-gray-200 bg-gray-50";
@@ -231,36 +237,89 @@ export default function DetectAnomalies() {
                   </Badge>
                 </div>
 
+                {/* Analysis Summary */}
+                {summary && (
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+                    <h4 className="font-medium text-gray-900 mb-3">Analysis Summary</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-900">{summary.totalLogsAnalyzed}</div>
+                        <div className="text-sm text-gray-600">Logs Analyzed</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-900">{summary.anomaliesFound}</div>
+                        <div className="text-sm text-gray-600">Anomalies Found</div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-lg font-semibold ${summary.highestSeverity === 'critical' ? 'text-red-600' : summary.highestSeverity === 'high' ? 'text-red-500' : summary.highestSeverity === 'medium' ? 'text-yellow-600' : 'text-blue-600'}`}>
+                          {summary.highestSeverity?.toUpperCase()}
+                        </div>
+                        <div className="text-sm text-gray-600">Highest Severity</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-900">{summary.commonPatterns?.length || 0}</div>
+                        <div className="text-sm text-gray-600">Patterns Found</div>
+                      </div>
+                    </div>
+                    
+                    {summary.commonPatterns && summary.commonPatterns.length > 0 && (
+                      <div className="mb-4">
+                        <strong className="text-sm text-gray-900">Common Patterns:</strong>
+                        <ul className="list-disc list-inside text-sm text-gray-700 mt-1">
+                          {summary.commonPatterns.map((pattern: string, index: number) => (
+                            <li key={index}>{pattern}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {summary.recommendations && summary.recommendations.length > 0 && (
+                      <div>
+                        <strong className="text-sm text-gray-900">Recommendations:</strong>
+                        <ul className="list-disc list-inside text-sm text-gray-700 mt-1">
+                          {summary.recommendations.map((rec: string, index: number) => (
+                            <li key={index}>{rec}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Anomaly Cards */}
                 <div className="space-y-4">
-                  {anomalies.map((anomaly) => (
+                  {anomalies.map((anomaly, index) => (
                     <div
-                      key={anomaly.id}
-                      className={`border rounded-lg p-4 ${getPriorityClass(anomaly.priority)}`}
+                      key={anomaly.logId || index}
+                      className={`border rounded-lg p-4 ${getSeverityClass(anomaly.severity)}`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
-                            {getPriorityBadge(anomaly.priority)}
-                            <span className="text-sm text-gray-500">{anomaly.sourceIp}</span>
+                            {getSeverityBadge(anomaly.severity)}
+                            <Badge variant="outline" className="text-xs">{anomaly.category}</Badge>
+                            <span className="text-sm text-gray-500">Log ID: {anomaly.logId}</span>
                             <span className="text-sm text-gray-500">•</span>
                             <span className="text-sm text-gray-500">
-                              {new Date(anomaly.timestamp).toLocaleString()}
+                              Confidence: {Math.round((anomaly.confidence || 0) * 100)}%
                             </span>
                           </div>
                           <h4 className="text-base font-medium text-gray-900 mb-2">
-                            {anomaly.title}
-                          </h4>
-                          <p className="text-sm text-gray-700 mb-3">
                             {anomaly.description}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {anomaly.tags.map((tag: string, index: number) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
+                          </h4>
+                          <div className="text-sm text-gray-700 mb-3">
+                            <strong>Recommended Action:</strong> {anomaly.recommendedAction}
                           </div>
+                          {anomaly.indicators && anomaly.indicators.length > 0 && (
+                            <div className="mb-3">
+                              <strong className="text-sm">Indicators:</strong>
+                              <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
+                                {anomaly.indicators.map((indicator: string, index: number) => (
+                                  <li key={index}>{indicator}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                         <div className="flex space-x-2 ml-4">
                           <Button variant="link" size="sm" className="text-primary hover:text-blue-700">

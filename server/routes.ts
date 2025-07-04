@@ -10,6 +10,19 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
+// Helper function to parse time ranges
+function parseTimeRange(timeRange: string): number {
+  switch (timeRange) {
+    case '1h': return 60 * 60 * 1000;
+    case '6h': return 6 * 60 * 60 * 1000;
+    case '12h': return 12 * 60 * 60 * 1000;
+    case '24h': return 24 * 60 * 60 * 1000;
+    case '7d': return 7 * 24 * 60 * 60 * 1000;
+    case '30d': return 30 * 24 * 60 * 60 * 1000;
+    default: return 24 * 60 * 60 * 1000; // Default to 24h
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -146,62 +159,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Anomaly detection API (stubbed for LLM integration)
+  // Anomaly detection API with OpenAI integration
   app.post("/api/anomalies/detect", isAuthenticated, async (req, res) => {
     try {
-      const { analysisType, sensitivity, timeRange } = req.body;
+      const { analysisType, sensitivity = 'medium', timeRange = '24h', companyId } = req.body;
       
-      // TODO: Integrate with LangChain and LLM for actual anomaly detection
-      // This is a placeholder response
-      const mockAnomalies = [
-        {
-          id: 1,
-          priority: "HIGH",
-          sourceIp: "192.168.1.45",
-          timestamp: new Date().toISOString(),
-          title: "Suspicious Multiple Failed Access Attempts",
-          description: "Detected unusual pattern of failed authentication attempts from single IP address. Pattern suggests potential brute force attack or credential stuffing attempt.",
-          tags: ["Brute Force", "Authentication", "Failed Login"],
-          riskScore: 8.5,
-        },
-        {
-          id: 2,
-          priority: "MEDIUM",
-          sourceIp: "192.168.1.67",
-          timestamp: new Date().toISOString(),
-          title: "Unusual Traffic Volume Spike",
-          description: "Detected significant increase in outbound traffic volume from this IP address. Pattern deviates from normal baseline by 340%.",
-          tags: ["Traffic Analysis", "Volume Spike"],
-          riskScore: 6.2,
-        },
-        {
-          id: 3,
-          priority: "LOW",
-          sourceIp: "192.168.1.23",
-          timestamp: new Date().toISOString(),
-          title: "Off-Hours Access Pattern",
-          description: "User accessing systems outside normal business hours. May indicate legitimate remote work or potential unauthorized access.",
-          tags: ["Access Pattern", "Off Hours"],
-          riskScore: 3.1,
-        },
-      ];
+      // Get logs for analysis
+      const logOptions = {
+        page: 1,
+        limit: analysisType === 'sample' ? 50 : 500, // Limit for cost control
+        companyId: companyId ? parseInt(companyId) : undefined,
+        // Add time range filtering if needed
+        ...(timeRange && timeRange !== 'all' && {
+          startDate: new Date(Date.now() - parseTimeRange(timeRange)),
+          endDate: new Date()
+        })
+      };
+      
+      const { logs } = await storage.getZscalerLogs(logOptions);
+      
+      if (logs.length === 0) {
+        return res.json({
+          anomalies: [],
+          summary: {
+            totalLogsAnalyzed: 0,
+            anomaliesFound: 0,
+            highestSeverity: 'low',
+            commonPatterns: [],
+            recommendations: ['No logs available for analysis']
+          }
+        });
+      }
 
-      res.json({
-        analysisType,
-        sensitivity,
-        timeRange,
-        anomaliesCount: mockAnomalies.length,
-        anomalies: mockAnomalies,
+      // Use OpenAI for actual anomaly detection
+      const { detectAnomalies } = await import('./openai');
+      
+      const result = await detectAnomalies({
+        logs: logs.map(log => ({
+          id: log.id,
+          timestamp: log.timestamp.toISOString(),
+          sourceIp: log.sourceIp,
+          destinationUrl: log.destinationUrl,
+          action: log.action,
+          riskLevel: log.riskLevel,
+          userAgent: log.userAgent || undefined,
+          responseCode: log.responseCode || undefined,
+          category: log.category || undefined
+        })),
+        sensitivity: sensitivity as 'low' | 'medium' | 'high',
+        timeRange
       });
+
+      res.json(result);
     } catch (error) {
-      console.error("Error running anomaly detection:", error);
-      res.status(500).json({ message: "Failed to run anomaly detection" });
+      console.error("Error detecting anomalies:", error);
+      res.status(500).json({ 
+        message: "Failed to detect anomalies",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
+
+  // Log summarization API
+  app.post("/api/logs/summarize", isAuthenticated, async (req, res) => {
+    try {
+      const { companyId, timeRange = '24h', limit = 100 } = req.body;
+      
+      const logOptions = {
+        page: 1,
+        limit: Math.min(limit, 200), // Limit for cost control
+        companyId: companyId ? parseInt(companyId) : undefined,
+        ...(timeRange && timeRange !== 'all' && {
+          startDate: new Date(Date.now() - parseTimeRange(timeRange)),
+          endDate: new Date()
+        })
+      };
+      
+      const { logs } = await storage.getZscalerLogs(logOptions);
+      
+      if (logs.length === 0) {
+        return res.json({
+          summary: "No logs available for analysis",
+          keyFindings: [],
+          recommendations: []
+        });
+      }
+
+      const { summarizeLogs } = await import('./openai');
+      const result = await summarizeLogs(logs);
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error summarizing logs:", error);
+      res.status(500).json({ 
+        message: "Failed to summarize logs",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+
 
   const httpServer = createServer(app);
   return httpServer;
 }
+
+
 
 // Helper function to parse log files
 function parseLogFile(content: string, format: string, companyId: number) {
