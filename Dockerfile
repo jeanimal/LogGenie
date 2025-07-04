@@ -16,8 +16,8 @@ RUN npm ci
 # Copy all source code
 COPY . .
 
-# Create uploads directory
-RUN mkdir -p uploads
+# Create necessary directories
+RUN mkdir -p uploads public
 
 # Expose port
 EXPOSE 5000
@@ -26,5 +26,6 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:5000/health || exit 1
 
-# Start the application in production mode using tsx (avoids build issues)
+# Start the application in development mode using tsx (avoids build issues)
+ENV NODE_ENV=development
 CMD ["npx", "tsx", "server/index.ts"]

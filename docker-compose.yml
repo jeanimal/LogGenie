@@ -4,7 +4,7 @@ services:
     ports:
       - "3000:5000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:password@db:5432/loggenie
       - SESSION_SECRET=change-this-to-a-secure-random-key
       - REPLIT_DOMAINS=localhost:3000

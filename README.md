@@ -91,7 +91,7 @@ services:
     ports:
       - "3000:5000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:password@db:5432/loggenie
       - SESSION_SECRET=your-secret-key-here
     depends_on:
@@ -138,7 +138,7 @@ volumes:
    docker run -d \
      --name loggenie-app \
      -p 3000:5000 \
-     -e NODE_ENV=production \
+     -e NODE_ENV=development \
      -e DATABASE_URL=postgresql://postgres:password@loggenie-db:5432/loggenie \
      -e SESSION_SECRET=your-secret-key \
      --link loggenie-db:db \
@@ -372,7 +372,7 @@ sleep 10
 docker run -d \
   --name loggenie-app \
   -p 3000:5000 \
-  -e NODE_ENV=production \
+  -e NODE_ENV=development \
   -e DATABASE_URL=postgresql://postgres:password@loggenie-db:5432/loggenie \
   -e SESSION_SECRET=your-secret-key \
   --link loggenie-db:db \
