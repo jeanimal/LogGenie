@@ -338,6 +338,59 @@ The application includes 110 sample ZScaler web proxy logs for testing and demon
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## Docker Troubleshooting
+
+### Error: "Cannot find package 'vite' imported from /app/dist/index.js"
+
+This error means you're running an old Docker image. Follow these steps exactly:
+
+```bash
+# 1. Stop and remove ALL existing containers
+docker stop loggenie-app loggenie-db 2>/dev/null || true
+docker rm loggenie-app loggenie-db 2>/dev/null || true
+
+# 2. Remove the old image completely
+docker rmi loggenie 2>/dev/null || true
+
+# 3. Clean up any dangling images
+docker system prune -f
+
+# 4. Rebuild the image with the new Dockerfile (use --no-cache!)
+docker build -t loggenie . --no-cache
+
+# 5. Start fresh containers
+docker run -d \
+  --name loggenie-db \
+  -e POSTGRES_DB=loggenie \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=password \
+  -p 5432:5432 \
+  postgres:15
+
+# 6. Wait for database to be ready
+sleep 10
+
+# 7. Start the application
+docker run -d \
+  --name loggenie-app \
+  -p 3000:5000 \
+  -e NODE_ENV=production \
+  -e DATABASE_URL=postgresql://postgres:password@host.docker.internal:5432/loggenie \
+  -e SESSION_SECRET=your-secret-key \
+  --link loggenie-db:db \
+  loggenie
+
+# 8. Check if it's working
+docker logs loggenie-app
+```
+
+**Alternative: Use Docker Compose**
+```bash
+docker-compose down --volumes
+docker-compose build --no-cache
+docker-compose up -d
+```
+
 ## Support
 
 For support and questions:
