@@ -30,7 +30,7 @@ export default function ViewLogs() {
   const { isAuthenticated, isLoading } = useAuth();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
-  const [companyFilter, setCompanyFilter] = useState<string>("");
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function ViewLogs() {
   });
 
   const { data: logsData, isLoading: logsLoading } = useQuery({
-    queryKey: ["/api/logs", page, limit, companyFilter],
+    queryKey: ["/api/logs", page, limit, companyFilter === "all" ? "" : companyFilter],
     enabled: isAuthenticated,
   });
 
@@ -87,7 +87,7 @@ export default function ViewLogs() {
     }
   };
 
-  const totalPages = logsData?.total ? Math.ceil(logsData.total / limit) : 0;
+  const totalPages = (logsData as any)?.total ? Math.ceil((logsData as any).total / limit) : 0;
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -139,8 +139,8 @@ export default function ViewLogs() {
                       <SelectValue placeholder="All Companies" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Companies</SelectItem>
-                      {companies?.map((company: any) => (
+                      <SelectItem value="all">All Companies</SelectItem>
+                      {(companies as any)?.map((company: any) => (
                         <SelectItem key={company.id} value={company.id.toString()}>
                           {company.name}
                         </SelectItem>
@@ -155,7 +155,7 @@ export default function ViewLogs() {
                       <SelectValue placeholder="All Types" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Types</SelectItem>
+                      <SelectItem value="all">All Types</SelectItem>
                       <SelectItem value="zscaler_web_proxy">ZScaler Web Proxy</SelectItem>
                     </SelectContent>
                   </Select>
@@ -200,7 +200,7 @@ export default function ViewLogs() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {logsData?.logs?.map((log: any) => (
+                        {(logsData as any)?.logs?.map((log: any) => (
                           <TableRow key={log.id} className="hover:bg-gray-50">
                             <TableCell className="text-sm text-gray-900">
                               {formatTimestamp(log.timestamp)}
@@ -235,9 +235,9 @@ export default function ViewLogs() {
                         Showing{" "}
                         <span className="font-medium">{(page - 1) * limit + 1}</span> to{" "}
                         <span className="font-medium">
-                          {Math.min(page * limit, logsData?.total || 0)}
+                          {Math.min(page * limit, (logsData as any)?.total || 0)}
                         </span>{" "}
-                        of <span className="font-medium">{logsData?.total || 0}</span> results
+                        of <span className="font-medium">{(logsData as any)?.total || 0}</span> results
                       </div>
                       <div className="flex items-center space-x-2">
                         <Button
