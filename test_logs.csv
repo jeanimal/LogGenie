@@ -1,6 +1,0 @@
-timestamp,sourceIp,destinationUrl,action,riskLevel,userAgent,responseCode,category
-2025-07-04T12:00:00.000Z,192.168.1.100,https://example.com,ALLOW,LOW,Mozilla/5.0 (Windows NT 10.0; Win64; x64),200,WEB_BROWSING
-2025-07-04T12:01:00.000Z,10.0.0.15,https://malicious.com,BLOCK,HIGH,curl/7.68.0,403,SECURITY
-2025-07-04T12:02:00.000Z,192.168.1.101,https://safe.com,ALLOW,LOW,Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7),200,WEB_BROWSING
-2025-07-04T12:03:00.000Z,172.16.0.5,https://suspicious.net,ALERT,MEDIUM,Mozilla/5.0 (X11; Linux x86_64),404,SECURITY
-2025-07-04T12:04:00.000Z,192.168.1.102,https://corporate.com,ALLOW,LOW,Mozilla/5.0 (Windows NT 10.0; Win64; x64),200,BUSINESS
