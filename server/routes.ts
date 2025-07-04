@@ -260,43 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Log summarization API
-  app.post("/api/logs/summarize", isAuthenticated, async (req, res) => {
-    try {
-      const { companyId, timeRange = '24h', limit = 100 } = req.body;
-      
-      const logOptions = {
-        page: 1,
-        limit: Math.min(limit, 200), // Limit for cost control
-        companyId: companyId ? parseInt(companyId) : undefined,
-        ...(timeRange && timeRange !== 'all' && {
-          startDate: new Date(Date.now() - parseTimeRange(timeRange)),
-          endDate: new Date()
-        })
-      };
-      
-      const { logs } = await storage.getZscalerLogs(logOptions);
-      
-      if (logs.length === 0) {
-        return res.json({
-          summary: "No logs available for analysis",
-          keyFindings: [],
-          recommendations: []
-        });
-      }
 
-      const { summarizeLogs } = await import('./openai');
-      const result = await summarizeLogs(logs);
-
-      res.json(result);
-    } catch (error) {
-      console.error("Error summarizing logs:", error);
-      res.status(500).json({ 
-        message: "Failed to summarize logs",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
 
   // Admin endpoints for log deletion
   app.delete("/api/admin/delete-all-logs", isAuthenticated, async (req, res) => {
