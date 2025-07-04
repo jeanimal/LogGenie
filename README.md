@@ -51,3 +51,295 @@ SESSION_SECRET=your-session-secret-key
 REPLIT_DOMAINS=your-replit-domain.com
 ISSUER_URL=https://replit.com/oidc
 REPL_ID=your-repl-id
+```
+
+## Local Development with Docker
+
+### Quick Start
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd loggenie
+   ```
+
+2. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your database credentials
+   ```
+
+3. **Start with Docker Compose**
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Access the application**
+   - Application: http://localhost:3000
+   - Database: PostgreSQL on localhost:5432
+
+### Docker Setup Options
+
+#### Option 1: Docker Compose (Recommended)
+
+Create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:5000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:password@db:5432/loggenie
+      - SESSION_SECRET=your-secret-key-here
+    depends_on:
+      - db
+    volumes:
+      - ./uploads:/app/uploads
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=loggenie
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  postgres_data:
+```
+
+#### Option 2: Standalone Docker Container
+
+1. **Build the Docker image**
+   ```bash
+   docker build -t loggenie .
+   ```
+
+2. **Run PostgreSQL database**
+   ```bash
+   docker run -d \
+     --name loggenie-db \
+     -e POSTGRES_DB=loggenie \
+     -e POSTGRES_USER=postgres \
+     -e POSTGRES_PASSWORD=password \
+     -p 5432:5432 \
+     postgres:15
+   ```
+
+3. **Run the application**
+   ```bash
+   docker run -d \
+     --name loggenie-app \
+     -p 3000:5000 \
+     -e DATABASE_URL=postgresql://postgres:password@host.docker.internal:5432/loggenie \
+     -e SESSION_SECRET=your-secret-key \
+     --link loggenie-db:db \
+     loggenie
+   ```
+
+### Database Setup
+
+The application will automatically create the necessary database tables on first run. To manually set up the database:
+
+```bash
+# Install dependencies
+npm install
+
+# Push database schema
+npm run db:push
+
+# (Optional) Seed with sample data
+npm run db:seed
+```
+
+### Development Mode
+
+For local development without Docker:
+
+```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+
+# Start PostgreSQL (using Docker)
+docker run -d \
+  --name postgres-dev \
+  -e POSTGRES_DB=loggenie \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=password \
+  -p 5432:5432 \
+  postgres:15
+
+# Run database migrations
+npm run db:push
+
+# Start development server
+npm run dev
+```
+
+### Production Deployment
+
+#### Environment Configuration
+
+For production deployment, ensure these environment variables are set:
+
+```env
+NODE_ENV=production
+DATABASE_URL=postgresql://user:password@host:port/database
+SESSION_SECRET=strong-random-secret-key
+REPLIT_DOMAINS=your-domain.com
+ISSUER_URL=https://replit.com/oidc
+REPL_ID=your-repl-id
+PORT=5000
+```
+
+#### Build and Deploy
+
+```bash
+# Build the application
+npm run build
+
+# Start production server
+npm start
+```
+
+### Health Checks
+
+The application includes health check endpoints:
+
+- **Application Health**: `GET /health`
+- **Database Health**: `GET /api/health/db`
+
+### Monitoring and Logs
+
+#### Docker Logs
+```bash
+# View application logs
+docker logs loggenie-app
+
+# View database logs
+docker logs loggenie-db
+
+# Follow logs in real-time
+docker logs -f loggenie-app
+```
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Port Already in Use**
+   ```bash
+   # Check what's using the port
+   lsof -i :3000
+   
+   # Kill the process or use a different port
+   docker run -p 3001:5000 loggenie
+   ```
+
+2. **Database Connection Issues**
+   ```bash
+   # Check database container status
+   docker ps | grep postgres
+   
+   # Test database connection
+   docker exec -it loggenie-db psql -U postgres -d loggenie
+   ```
+
+3. **Permission Issues**
+   ```bash
+   # Fix file permissions
+   sudo chown -R $USER:$USER ./uploads
+   chmod 755 ./uploads
+   ```
+
+## API Documentation
+
+### Authentication Endpoints
+
+- `GET /api/auth/user` - Get current user information
+- `GET /api/login` - Initiate login flow
+- `GET /api/logout` - Logout and clear session
+
+### Log Management Endpoints
+
+- `GET /api/logs` - Get paginated logs with filtering
+- `POST /api/logs/upload` - Upload log files
+- `GET /api/companies` - Get available companies
+- `GET /api/log-types` - Get supported log types
+
+### Analytics Endpoints
+
+- `GET /api/analytics/stats` - Get log statistics
+- `GET /api/analytics/top-ips` - Get top source IPs
+- `POST /api/analytics/anomalies` - Detect anomalies in logs
+
+### Sample API Requests
+
+```bash
+# Get logs with pagination
+curl "http://localhost:3000/api/logs?page=1&limit=20&company=1"
+
+# Upload a log file
+curl -X POST \
+  -F "file=@sample.csv" \
+  -F "companyId=1" \
+  -F "logTypeId=1" \
+  http://localhost:3000/api/logs/upload
+
+# Get analytics statistics
+curl "http://localhost:3000/api/analytics/stats"
+```
+
+## Database Schema
+
+### Core Tables
+
+- `users` - User authentication and profile data
+- `companies` - Multi-tenant company organizations
+- `log_types` - Configurable log type definitions
+- `zscaler_logs` - ZScaler web proxy log entries
+- `log_uploads` - Upload tracking and metadata
+- `sessions` - Session storage for authentication
+
+### Sample Data
+
+The application includes 110 sample ZScaler web proxy logs for testing and demonstration purposes.
+
+## Security Considerations
+
+- All routes require authentication except landing page
+- Session-based authentication with secure cookies
+- File upload validation and size limits (10MB)
+- SQL injection protection via Drizzle ORM
+- CORS configuration for production deployment
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Support
+
+For support and questions:
+- Check the troubleshooting section above
+- Review the application logs
+- Open an issue in the repository

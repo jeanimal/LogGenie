@@ -128,6 +128,8 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Complete CRUD operations for log management and analytics
   - AI-ready anomaly detection with LLM integration endpoints
   - Docker containerization for external deployment
+  - Comprehensive README with Docker setup instructions
+  - Fixed SelectItem errors and TypeScript issues in View Logs page
 
 ## Changelog
 
