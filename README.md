@@ -140,6 +140,7 @@ volumes:
    docker run -d \
      --name loggenie-app \
      -p 3000:5000 \
+     -e NODE_ENV=production \
      -e DATABASE_URL=postgresql://postgres:password@host.docker.internal:5432/loggenie \
      -e SESSION_SECRET=your-secret-key \
      --link loggenie-db:db \
