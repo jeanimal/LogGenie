@@ -1,0 +1,28 @@
+You are creating an app called “LogGenie” that assists cybersecurity operations analysts to find potential threats in companies’ telemetry logs.
+
+This is a web app using the following technology:
+Backend: python flask
+Front end: javascript react
+Authentication: Replit Auth
+Storage: PostgreSQL database
+Features: Hooks to call a large language model via langchain to analyze the logs
+
+The front end should be in javascript react and have:
+A “login” page for security analysts, letting anyone login with ReplitAuth.  By default, everyone can login to the “dev” company.  All other pages require an authenticated user.  After login, take the user to the “dashboard” page described below.
+An “upload” page to upload logs to analyze.  There is a drop-down for the company, currently populated with only the “dev” company.  There is another drop-down for log type, currently populated with “ZScaler web proxy log.”  There is another drop-down for log format, offering “csv” or “txt”.
+A “view” page showing all logs uploaded so far in a table sorted with most recent on top. Allow users to page through logs in batches of 20, 50, or 100.
+A “summarize” page that will  contain summary charts similar to the data card that kaggle displays.
+A “detect anomalies” page that is stubbed out for calling a large language model with langchain to report on anomalies in the logs that could be relevant to cybersecurity threats.
+A “dashboard” page with links to the upload, view, analyze, and detect anomalies pages.  
+
+The backend should be a python flask backend have at least these REST API calls:
+Login
+Upload
+View.  This shows the raw logs in a table, with a choice of 20, 50, or 100 per page.
+Analyze.  This is a placeholder page for calling the LLM.
+
+The database should have everything needed plus the business logic part should have:
+A table for log types and which table the raw logs are stored in, populated with ZScaler web proxy log.
+A log record table for the ZScaler web proxy logs.  Pre-populate it with 110 example log entries.
+
+This should run in Replit but also have a docker file for running it external to Replit.  Include a README file about the project and how to run it in Replit.
