@@ -2,9 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertLogUploadSchema, insertZscalerLogSchema, zscalerLogs } from "@shared/schema";
+import { insertLogUploadSchema, insertZscalerLogSchema, zscalerLogs, logUploads } from "@shared/schema";
 import { db } from "./db";
-import { inArray } from "drizzle-orm";
+import { inArray, eq } from "drizzle-orm";
 import multer from "multer";
 
 const upload = multer({ 
@@ -298,7 +298,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoints for log deletion
+  app.delete("/api/admin/delete-all-logs", isAuthenticated, async (req, res) => {
+    try {
+      // Delete all ZScaler logs
+      await db.delete(zscalerLogs);
+      
+      // Delete all log uploads
+      await db.delete(logUploads);
+      
+      res.json({ 
+        message: "All logs have been deleted successfully",
+        deletedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error deleting all logs:", error);
+      res.status(500).json({ 
+        message: "Failed to delete logs",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
 
+  app.delete("/api/admin/delete-company-logs/:companyId", isAuthenticated, async (req, res) => {
+    try {
+      const { companyId } = req.params;
+      const companyIdNum = parseInt(companyId);
+      
+      if (isNaN(companyIdNum)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+      
+      // Delete ZScaler logs for this company
+      const deletedLogs = await db
+        .delete(zscalerLogs)
+        .where(eq(zscalerLogs.companyId, companyIdNum))
+        .returning();
+      
+      // Delete log uploads for this company  
+      const deletedUploads = await db
+        .delete(logUploads)
+        .where(eq(logUploads.companyId, companyIdNum))
+        .returning();
+      
+      res.json({ 
+        message: `All logs for company ${companyId} have been deleted successfully`,
+        deletedLogs: deletedLogs.length,
+        deletedUploads: deletedUploads.length,
+        deletedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error deleting company logs:", error);
+      res.status(500).json({ 
+        message: "Failed to delete company logs",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

@@ -10,6 +10,7 @@ import {
   Search,
   User,
   LogOut,
+  Settings,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -22,6 +23,7 @@ export default function Sidebar() {
     { name: "View Logs", href: "/view", icon: FileText },
     { name: "Summarize", href: "/summarize", icon: BarChart },
     { name: "Detect Anomalies", href: "/detect", icon: Search },
+    { name: "Admin Panel", href: "/admin", icon: Settings },
   ];
 
   const handleLogout = () => {

@@ -155,6 +155,10 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Removed automatic generation of random sample logs when server starts
   - Updated log parsing to handle actual CSV data instead of generating random data
   - Application now starts with empty database requiring manual log uploads
+  - Added comprehensive admin panel with database management functionality
+  - Implemented log deletion by company or all companies with confirmation dialogs
+  - Added admin navigation link to sidebar with Settings icon
+  - Created secure admin API endpoints for bulk log deletion operations
 
 ## Changelog
 
