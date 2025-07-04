@@ -81,14 +81,11 @@ export default function DetectAnomalies() {
 
   const fetchLogsMutation = useMutation({
     mutationFn: async ({ anomalyIndex, logIds }: { anomalyIndex: number; logIds: number[] }) => {
-      console.log("Fetching logs for anomaly", anomalyIndex, "with logIds", logIds);
       const response = await apiRequest("POST", `/api/logs/by-ids`, { logIds });
       const logs = await response.json();
-      console.log("Received logs:", logs);
       return { anomalyIndex, logs };
     },
     onSuccess: ({ anomalyIndex, logs }) => {
-      console.log("Setting log details for anomaly", anomalyIndex, "with logs", logs);
       const newLogDetails = new Map(logDetails);
       newLogDetails.set(anomalyIndex, logs);
       setLogDetails(newLogDetails);
@@ -150,20 +147,13 @@ export default function DetectAnomalies() {
   };
 
   const handleViewDetails = (anomalyIndex: number, logIds: number[]) => {
-    console.log("handleViewDetails called with anomalyIndex:", anomalyIndex, "logIds:", logIds);
-    console.log("expandedAnomaly:", expandedAnomaly);
-    console.log("logDetails has anomalyIndex:", logDetails.has(anomalyIndex));
-    
     if (expandedAnomaly === anomalyIndex) {
       // Collapse if already expanded
-      console.log("Collapsing anomaly");
       setExpandedAnomaly(null);
     } else {
       // Expand and fetch log details if not already loaded
-      console.log("Expanding anomaly");
       setExpandedAnomaly(anomalyIndex);
       if (!logDetails.has(anomalyIndex)) {
-        console.log("Fetching log details");
         fetchLogsMutation.mutate({ anomalyIndex, logIds });
       }
     }
@@ -453,13 +443,13 @@ export default function DetectAnomalies() {
                       </div>
                       
                       {/* Expanded Details Section */}
-                      {expandedAnomaly === anomaly.logId && (
+                      {expandedAnomaly === originalIndex && (
                         <div className="mt-4 p-4 bg-gray-50 rounded-lg border-t">
                           <h5 className="font-medium text-gray-900 mb-3">Detailed Analysis</h5>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div>
-                              <strong className="text-gray-700">Log ID:</strong>
-                              <p className="text-gray-600">{anomaly.logId}</p>
+                              <strong className="text-gray-700">Log IDs:</strong>
+                              <p className="text-gray-600">{anomaly.logIds?.join(', ') || 'N/A'}</p>
                             </div>
                             <div>
                               <strong className="text-gray-700">Severity Level:</strong>
