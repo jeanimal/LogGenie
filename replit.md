@@ -151,6 +151,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Implemented interactive timeline filter on View Logs page replacing static date range inputs
   - Added dual-handle range slider allowing independent control of start and end times
   - Created timeline API endpoint providing earliest/latest timestamps and total log counts
+  - Fixed View Logs page routing from `/view` to `/view-logs` for consistent navigation
+  - Completed URL-based filtering with shareable links, bookmarkable filters, and browser navigation support
+  - All filter changes (company, timeline, pagination, page size) now sync to URL parameters automatically
   - Removed unused test_logs.csv file - application uses programmatically generated sample data
   - Removed automatic generation of random sample logs when server starts
   - Updated log parsing to handle actual CSV data instead of generating random data
