@@ -2,7 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertLogUploadSchema, insertZscalerLogSchema } from "@shared/schema";
+import { insertLogUploadSchema, insertZscalerLogSchema, zscalerLogs } from "@shared/schema";
+import { db } from "./db";
+import { inArray } from "drizzle-orm";
 import multer from "multer";
 
 const upload = multer({ 
@@ -215,6 +217,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error detecting anomalies:", error);
       res.status(500).json({ 
         message: "Failed to detect anomalies",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Get specific log entries by IDs
+  app.post("/api/logs/by-ids", isAuthenticated, async (req, res) => {
+    try {
+      const { logIds } = req.body;
+      
+      if (!Array.isArray(logIds) || logIds.length === 0) {
+        return res.status(400).json({ message: "logIds array is required" });
+      }
+
+      const logs = await db
+        .select()
+        .from(zscalerLogs)
+        .where(inArray(zscalerLogs.id, logIds))
+        .orderBy(zscalerLogs.timestamp);
+
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching logs by IDs:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch log entries",
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }

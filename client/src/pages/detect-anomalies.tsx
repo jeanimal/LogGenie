@@ -29,6 +29,7 @@ export default function DetectAnomalies() {
   const [dismissedAnomalies, setDismissedAnomalies] = useState<Set<number>>(new Set());
   const [expandedAnomaly, setExpandedAnomaly] = useState<number | null>(null);
   const [showDismissed, setShowDismissed] = useState(false);
+  const [logDetails, setLogDetails] = useState<Map<number, any[]>>(new Map());
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -78,6 +79,35 @@ export default function DetectAnomalies() {
     },
   });
 
+  const fetchLogsMutation = useMutation({
+    mutationFn: async (logIds: number[]) => {
+      return await apiRequest(`/api/logs/by-ids`, "POST", { logIds });
+    },
+    onSuccess: (logs, logIds) => {
+      const newLogDetails = new Map(logDetails);
+      newLogDetails.set(logIds[0], logs); // Using first logId as key since we're fetching for one anomaly
+      setLogDetails(newLogDetails);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Failed to Load Log Details",
+        description: "Unable to fetch log details. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRunDetection = () => {
     anomalyDetectionMutation.mutate({
       analysisType,
@@ -115,7 +145,16 @@ export default function DetectAnomalies() {
   };
 
   const handleViewDetails = (logId: number) => {
-    setExpandedAnomaly(expandedAnomaly === logId ? null : logId);
+    if (expandedAnomaly === logId) {
+      // Collapse if already expanded
+      setExpandedAnomaly(null);
+    } else {
+      // Expand and fetch log details if not already loaded
+      setExpandedAnomaly(logId);
+      if (!logDetails.has(logId)) {
+        fetchLogsMutation.mutate([logId]);
+      }
+    }
   };
 
   // Filter anomalies based on dismissed state
@@ -437,6 +476,53 @@ export default function DetectAnomalies() {
                           <div className="mt-4">
                             <strong className="text-gray-700">Recommended Response:</strong>
                             <p className="text-gray-600 text-sm mt-1">{anomaly.recommendedAction}</p>
+                          </div>
+
+                          {/* Log Details Section */}
+                          <div className="mt-6 border-t pt-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <strong className="text-gray-700">Related Log Entries</strong>
+                              {fetchLogsMutation.isPending && (
+                                <span className="text-sm text-gray-500">Loading log details...</span>
+                              )}
+                            </div>
+                            
+                            {logDetails.has(anomaly.logId) ? (
+                              <div className="space-y-3">
+                                {logDetails.get(anomaly.logId)?.map((log: any, logIndex: number) => (
+                                  <div key={logIndex} className="bg-gray-50 rounded-md p-3 text-sm font-mono">
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                      <div><span className="font-semibold">Timestamp:</span> {new Date(log.timestamp).toLocaleString()}</div>
+                                      <div><span className="font-semibold">Source IP:</span> {log.sourceIp}</div>
+                                      <div className="col-span-2"><span className="font-semibold">URL:</span> {log.destinationUrl}</div>
+                                      <div><span className="font-semibold">Action:</span> {log.action}</div>
+                                      <div><span className="font-semibold">Risk Level:</span> 
+                                        <span className={`ml-1 px-2 py-1 rounded text-xs ${
+                                          log.riskLevel === 'high' ? 'bg-red-100 text-red-800' :
+                                          log.riskLevel === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                          'bg-green-100 text-green-800'
+                                        }`}>
+                                          {log.riskLevel}
+                                        </span>
+                                      </div>
+                                      {log.responseCode && (
+                                        <div><span className="font-semibold">Response Code:</span> {log.responseCode}</div>
+                                      )}
+                                      {log.category && (
+                                        <div><span className="font-semibold">Category:</span> {log.category}</div>
+                                      )}
+                                      {log.userAgent && (
+                                        <div className="col-span-2"><span className="font-semibold">User Agent:</span> {log.userAgent.substring(0, 100)}...</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : !fetchLogsMutation.isPending && (
+                              <div className="text-sm text-gray-500 italic">
+                                Click "View Details" to load related log entries
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
