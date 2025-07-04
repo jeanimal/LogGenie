@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Info, AlertTriangle, Eye, X } from "lucide-react";
+import { Search, Info, AlertTriangle, Eye, X, Plus, Minus } from "lucide-react";
 
 export default function DetectAnomalies() {
   const { toast } = useToast();
@@ -30,35 +30,66 @@ export default function DetectAnomalies() {
   const [expandedAnomaly, setExpandedAnomaly] = useState<number | null>(null);
   const [showDismissed, setShowDismissed] = useState(false);
   const [logDetails, setLogDetails] = useState<Map<number, any[]>>(new Map());
-  const [sortBy, setSortBy] = useState<string>("severity");
-  const [sortOrder, setSortOrder] = useState<string>("desc");
+  const [sortCriteria, setSortCriteria] = useState<Array<{field: string, order: string}>>([
+    { field: "severity", order: "desc" },
+    { field: "confidence", order: "desc" }
+  ]);
 
-  // Sorting function for anomalies
+  // Multi-level sorting function for anomalies
   const sortAnomalies = (anomaliesToSort: any[]) => {
     return [...anomaliesToSort].sort((a, b) => {
-      let compareValue = 0;
-      
-      switch (sortBy) {
-        case "severity":
-          const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
-          compareValue = (severityOrder[a.severity as keyof typeof severityOrder] || 0) - 
-                        (severityOrder[b.severity as keyof typeof severityOrder] || 0);
-          break;
-        case "category":
-          compareValue = a.category.localeCompare(b.category);
-          break;
-        case "confidence":
-          compareValue = a.confidence - b.confidence;
-          break;
-        case "logCount":
-          compareValue = (a.logIds?.length || 0) - (b.logIds?.length || 0);
-          break;
-        default:
-          return 0;
+      for (const criterion of sortCriteria) {
+        let compareValue = 0;
+        
+        switch (criterion.field) {
+          case "severity":
+            const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+            compareValue = (severityOrder[a.severity as keyof typeof severityOrder] || 0) - 
+                          (severityOrder[b.severity as keyof typeof severityOrder] || 0);
+            break;
+          case "category":
+            compareValue = a.category.localeCompare(b.category);
+            break;
+          case "confidence":
+            compareValue = a.confidence - b.confidence;
+            break;
+          case "logCount":
+            compareValue = (a.logIds?.length || 0) - (b.logIds?.length || 0);
+            break;
+          default:
+            continue;
+        }
+        
+        // Apply sort order
+        const adjustedValue = criterion.order === "asc" ? compareValue : -compareValue;
+        
+        // If values are different, return the result; otherwise, continue to next criterion
+        if (adjustedValue !== 0) {
+          return adjustedValue;
+        }
       }
       
-      return sortOrder === "asc" ? compareValue : -compareValue;
+      return 0; // All criteria are equal
     });
+  };
+
+  // Helper functions for managing sort criteria
+  const addSortCriterion = () => {
+    if (sortCriteria.length < 4) { // Limit to 4 criteria
+      setSortCriteria([...sortCriteria, { field: "severity", order: "desc" }]);
+    }
+  };
+
+  const removeSortCriterion = (index: number) => {
+    if (sortCriteria.length > 1) { // Keep at least one criterion
+      setSortCriteria(sortCriteria.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateSortCriterion = (index: number, field: string, order: string) => {
+    const newCriteria = [...sortCriteria];
+    newCriteria[index] = { field, order };
+    setSortCriteria(newCriteria);
   };
 
   // Redirect to home if not authenticated
@@ -349,30 +380,68 @@ export default function DetectAnomalies() {
                   </div>
                 </div>
 
-                {/* Sorting Controls */}
-                <div className="flex items-center space-x-4 mb-6 p-4 bg-gray-50 rounded-lg border">
-                  <Label className="text-sm font-medium text-gray-700">Sort by:</Label>
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="severity">Severity</SelectItem>
-                      <SelectItem value="category">Category</SelectItem>
-                      <SelectItem value="confidence">Confidence</SelectItem>
-                      <SelectItem value="logCount">Log Count</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* Multi-Level Sorting Controls */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+                  <div className="flex items-center justify-between mb-4">
+                    <Label className="text-sm font-medium text-gray-700">Sort Criteria (in order of priority):</Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={addSortCriterion}
+                      disabled={sortCriteria.length >= 4}
+                      className="text-xs"
+                    >
+                      <Plus className="mr-1 h-3 w-3" />
+                      Add Criterion
+                    </Button>
+                  </div>
                   
-                  <Select value={sortOrder} onValueChange={setSortOrder}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="desc">High to Low</SelectItem>
-                      <SelectItem value="asc">Low to High</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-3">
+                    {sortCriteria.map((criterion, index) => (
+                      <div key={index} className="flex items-center space-x-3">
+                        <span className="text-sm text-gray-500 w-6">{index + 1}.</span>
+                        
+                        <Select 
+                          value={criterion.field} 
+                          onValueChange={(field) => updateSortCriterion(index, field, criterion.order)}
+                        >
+                          <SelectTrigger className="w-40">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="severity">Severity</SelectItem>
+                            <SelectItem value="category">Category</SelectItem>
+                            <SelectItem value="confidence">Confidence</SelectItem>
+                            <SelectItem value="logCount">Log Count</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        <Select 
+                          value={criterion.order} 
+                          onValueChange={(order) => updateSortCriterion(index, criterion.field, order)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="desc">High to Low</SelectItem>
+                            <SelectItem value="asc">Low to High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        {sortCriteria.length > 1 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeSortCriterion(index)}
+                            className="text-xs text-red-600 hover:text-red-700"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Analysis Summary */}
