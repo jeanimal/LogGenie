@@ -307,6 +307,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Delete all log uploads
       await db.delete(logUploads);
       
+      // Note: Anomaly detection is performed on-demand from current logs,
+      // so deleting logs automatically removes them from future anomaly analysis
+      
       res.json({ 
         message: "All logs have been deleted successfully",
         deletedAt: new Date().toISOString()
@@ -340,6 +343,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .delete(logUploads)
         .where(eq(logUploads.companyId, companyIdNum))
         .returning();
+      
+      // Note: Anomaly detection is performed on-demand from current logs,
+      // so deleting logs automatically removes them from future anomaly analysis
       
       res.json({ 
         message: `All logs for company ${companyId} have been deleted successfully`,
