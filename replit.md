@@ -146,6 +146,8 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Added dynamic sort criteria management with add/remove functionality (up to 4 criteria)
   - Implemented comprehensive export report functionality with JSON format download
   - Removed schedule analysis button and enhanced clear all functionality
+  - Added configurable AI parameters (temperature and max_tokens) to anomaly detection UI
+  - Set default AI settings: temperature=0.2 (focused), max_tokens=2000 (standard)
 
 ## Changelog
 

@@ -37,6 +37,8 @@ export interface AnomalyDetectionRequest {
   }>;
   sensitivity: 'low' | 'medium' | 'high';
   timeRange: string;
+  temperature?: number;
+  maxTokens?: number;
 }
 
 export interface AnomalyDetectionResult {
@@ -76,8 +78,8 @@ export async function detectAnomalies(request: AnomalyDetectionRequest): Promise
         }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.3,
-      max_tokens: 2000
+      temperature: request.temperature ?? 0.2,
+      max_tokens: request.maxTokens ?? 2000
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
@@ -147,7 +149,7 @@ Focus on:
 `;
 }
 
-export async function summarizeLogs(logs: Array<any>): Promise<{
+export async function summarizeLogs(logs: Array<any>, temperature: number = 0.2, maxTokens: number = 2000): Promise<{
   summary: string;
   keyFindings: string[];
   recommendations: string[];
@@ -175,8 +177,8 @@ Respond with JSON in this format:
         }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.3,
-      max_tokens: 1000
+      temperature: temperature,
+      max_tokens: maxTokens
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');

@@ -34,6 +34,8 @@ export default function DetectAnomalies() {
     { field: "severity", order: "desc" },
     { field: "confidence", order: "desc" }
   ]);
+  const [temperature, setTemperature] = useState<number>(0.2);
+  const [maxTokens, setMaxTokens] = useState<number>(2000);
 
   // Multi-level sorting function for anomalies
   const sortAnomalies = (anomaliesToSort: any[]) => {
@@ -112,6 +114,10 @@ export default function DetectAnomalies() {
           analysisType,
           sensitivity,
           timeRange,
+          aiConfiguration: {
+            temperature,
+            maxTokens,
+          },
         },
         sortingCriteria: sortCriteria,
       },
@@ -177,7 +183,7 @@ export default function DetectAnomalies() {
   }, [isAuthenticated, isLoading, toast]);
 
   const anomalyDetectionMutation = useMutation({
-    mutationFn: async (params: { analysisType: string; sensitivity: string; timeRange: string }) => {
+    mutationFn: async (params: { analysisType: string; sensitivity: string; timeRange: string; temperature: number; maxTokens: number }) => {
       const response = await apiRequest("POST", "/api/anomalies/detect", params);
       return response.json();
     },
@@ -245,6 +251,8 @@ export default function DetectAnomalies() {
       analysisType,
       sensitivity,
       timeRange,
+      temperature,
+      maxTokens,
     });
   };
 
@@ -339,7 +347,7 @@ export default function DetectAnomalies() {
           <Card className="mb-8">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Detection Configuration</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2">Analysis Type</Label>
                   <Select value={analysisType} onValueChange={setAnalysisType}>
@@ -379,6 +387,37 @@ export default function DetectAnomalies() {
                       <SelectItem value="24h">Last 24 Hours</SelectItem>
                       <SelectItem value="7d">Last 7 Days</SelectItem>
                       <SelectItem value="30d">Last 30 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-2">AI Temperature</Label>
+                  <Select value={temperature.toString()} onValueChange={(value) => setTemperature(parseFloat(value))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0.0">0.0 (Deterministic)</SelectItem>
+                      <SelectItem value="0.2">0.2 (Focused)</SelectItem>
+                      <SelectItem value="0.5">0.5 (Balanced)</SelectItem>
+                      <SelectItem value="0.8">0.8 (Creative)</SelectItem>
+                      <SelectItem value="1.0">1.0 (Very Creative)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-2">Max Tokens</Label>
+                  <Select value={maxTokens.toString()} onValueChange={(value) => setMaxTokens(parseInt(value))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1000">1,000 (Concise)</SelectItem>
+                      <SelectItem value="2000">2,000 (Standard)</SelectItem>
+                      <SelectItem value="3000">3,000 (Detailed)</SelectItem>
+                      <SelectItem value="4000">4,000 (Comprehensive)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
