@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -29,12 +30,33 @@ import { Search, Calendar, Clock } from "lucide-react";
 export default function ViewLogs() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
-  const [companyFilter, setCompanyFilter] = useState<string>("all");
-  const [timelineRange, setTimelineRange] = useState<[number, number]>([0, 100]);
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  const [location, setLocation] = useLocation();
+  const searchParams = new URLSearchParams(useSearch());
+
+  // Get filter values from URL or use defaults
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = parseInt(searchParams.get('limit') || '20');
+  const companyFilter = searchParams.get('company') || 'all';
+  const timelineStart = parseInt(searchParams.get('timelineStart') || '0');
+  const timelineEnd = parseInt(searchParams.get('timelineEnd') || '100');
+  const timelineRange: [number, number] = [timelineStart, timelineEnd];
+  const startDate = searchParams.get('startDate') || '';
+  const endDate = searchParams.get('endDate') || '';
+
+  // Function to update URL with new filter values
+  const updateFilters = (newFilters: Record<string, string | number>) => {
+    const params = new URLSearchParams(searchParams);
+    
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        params.set(key, value.toString());
+      } else {
+        params.delete(key);
+      }
+    });
+    
+    setLocation(`/view-logs?${params.toString()}`);
+  };
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -95,8 +117,11 @@ export default function ViewLogs() {
     const endDateObj = convertSliderToDate(sliderValues[1]);
     
     if (startDateObj && endDateObj) {
-      setStartDate(startDateObj.toISOString());
-      setEndDate(endDateObj.toISOString());
+      updateFilters({
+        startDate: startDateObj.toISOString(),
+        endDate: endDateObj.toISOString(),
+        page: 1
+      });
     }
   };
 
@@ -159,7 +184,7 @@ export default function ViewLogs() {
             {/* Pagination Controls */}
             <div className="flex items-center space-x-4">
               <Label className="text-sm font-medium text-gray-700">Show:</Label>
-              <Select value={limit.toString()} onValueChange={(value) => setLimit(parseInt(value))}>
+              <Select value={limit.toString()} onValueChange={(value) => updateFilters({ limit: parseInt(value), page: 1 })}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
@@ -178,7 +203,7 @@ export default function ViewLogs() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2">Company</Label>
-                  <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                  <Select value={companyFilter} onValueChange={(value) => updateFilters({ company: value, page: 1 })}>
                     <SelectTrigger>
                       <SelectValue placeholder="All Companies" />
                     </SelectTrigger>
@@ -222,7 +247,14 @@ export default function ViewLogs() {
                         
                         <Slider
                           value={timelineRange}
-                          onValueChange={(value) => setTimelineRange(value as [number, number])}
+                          onValueChange={(value) => {
+                            const [start, end] = value as [number, number];
+                            updateFilters({ 
+                              timelineStart: start, 
+                              timelineEnd: end, 
+                              page: 1 
+                            });
+                          }}
                           max={100}
                           min={0}
                           step={1}
@@ -327,7 +359,7 @@ export default function ViewLogs() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setPage(Math.max(1, page - 1))}
+                          onClick={() => updateFilters({ page: Math.max(1, page - 1) })}
                           disabled={page === 1}
                         >
                           Previous
@@ -339,7 +371,7 @@ export default function ViewLogs() {
                               key={pageNum}
                               variant={page === pageNum ? "default" : "outline"}
                               size="sm"
-                              onClick={() => setPage(pageNum)}
+                              onClick={() => updateFilters({ page: pageNum })}
                               className={page === pageNum ? "bg-primary text-white" : ""}
                             >
                               {pageNum}
@@ -352,7 +384,7 @@ export default function ViewLogs() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setPage(totalPages)}
+                              onClick={() => updateFilters({ page: totalPages })}
                             >
                               {totalPages}
                             </Button>
@@ -361,7 +393,7 @@ export default function ViewLogs() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setPage(Math.min(totalPages, page + 1))}
+                          onClick={() => updateFilters({ page: Math.min(totalPages, page + 1) })}
                           disabled={page === totalPages}
                         >
                           Next
