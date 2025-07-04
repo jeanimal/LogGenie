@@ -13,7 +13,8 @@ services:
       - ISSUER_URL=https://replit.com/oidc
       - REPL_ID=your-repl-id
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - ./uploads:/app/uploads
     restart: unless-stopped
@@ -29,6 +30,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
