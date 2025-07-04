@@ -81,7 +81,7 @@ export default function DetectAnomalies() {
 
   const fetchLogsMutation = useMutation({
     mutationFn: async (logIds: number[]) => {
-      const response = await apiRequest(`/api/logs/by-ids`, "POST", { logIds });
+      const response = await apiRequest("POST", `/api/logs/by-ids`, { logIds });
       return await response.json();
     },
     onSuccess: (logs, logIds) => {
