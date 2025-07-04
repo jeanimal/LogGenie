@@ -395,14 +395,20 @@ export default function DetectAnomalies() {
                   <Label className="text-sm font-medium text-gray-700 mb-2">AI Temperature</Label>
                   <Select value={temperature.toString()} onValueChange={(value) => setTemperature(parseFloat(value))}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select temperature">
+                        {temperature === 0 && "0.0 (Deterministic)"}
+                        {temperature === 0.2 && "0.2 (Focused)"}
+                        {temperature === 0.5 && "0.5 (Balanced)"}
+                        {temperature === 0.8 && "0.8 (Creative)"}
+                        {temperature === 1 && "1.0 (Very Creative)"}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="0.0">0.0 (Deterministic)</SelectItem>
+                      <SelectItem value="0">0.0 (Deterministic)</SelectItem>
                       <SelectItem value="0.2">0.2 (Focused)</SelectItem>
                       <SelectItem value="0.5">0.5 (Balanced)</SelectItem>
                       <SelectItem value="0.8">0.8 (Creative)</SelectItem>
-                      <SelectItem value="1.0">1.0 (Very Creative)</SelectItem>
+                      <SelectItem value="1">1.0 (Very Creative)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
