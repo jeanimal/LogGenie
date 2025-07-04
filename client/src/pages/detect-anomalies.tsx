@@ -30,6 +30,36 @@ export default function DetectAnomalies() {
   const [expandedAnomaly, setExpandedAnomaly] = useState<number | null>(null);
   const [showDismissed, setShowDismissed] = useState(false);
   const [logDetails, setLogDetails] = useState<Map<number, any[]>>(new Map());
+  const [sortBy, setSortBy] = useState<string>("severity");
+  const [sortOrder, setSortOrder] = useState<string>("desc");
+
+  // Sorting function for anomalies
+  const sortAnomalies = (anomaliesToSort: any[]) => {
+    return [...anomaliesToSort].sort((a, b) => {
+      let compareValue = 0;
+      
+      switch (sortBy) {
+        case "severity":
+          const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+          compareValue = (severityOrder[a.severity as keyof typeof severityOrder] || 0) - 
+                        (severityOrder[b.severity as keyof typeof severityOrder] || 0);
+          break;
+        case "category":
+          compareValue = a.category.localeCompare(b.category);
+          break;
+        case "confidence":
+          compareValue = a.confidence - b.confidence;
+          break;
+        case "logCount":
+          compareValue = (a.logIds?.length || 0) - (b.logIds?.length || 0);
+          break;
+        default:
+          return 0;
+      }
+      
+      return sortOrder === "asc" ? compareValue : -compareValue;
+    });
+  };
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -159,10 +189,12 @@ export default function DetectAnomalies() {
     }
   };
 
-  // Filter anomalies based on dismissed state
-  const visibleAnomalies = showDismissed 
+  // Filter and sort anomalies based on dismissed state and sorting preferences
+  const filteredAnomalies = showDismissed 
     ? anomalies.filter((anomaly, index) => dismissedAnomalies.has(index))
     : anomalies.filter((anomaly, index) => !dismissedAnomalies.has(index));
+  
+  const visibleAnomalies = sortAnomalies(filteredAnomalies);
   
   const dismissedCount = anomalies.filter((anomaly, index) => dismissedAnomalies.has(index)).length;
 
@@ -315,6 +347,32 @@ export default function DetectAnomalies() {
                       {showDismissed ? `${dismissedCount} Dismissed` : `${visibleAnomalies.length} Active`}
                     </Badge>
                   </div>
+                </div>
+
+                {/* Sorting Controls */}
+                <div className="flex items-center space-x-4 mb-6 p-4 bg-gray-50 rounded-lg border">
+                  <Label className="text-sm font-medium text-gray-700">Sort by:</Label>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="severity">Severity</SelectItem>
+                      <SelectItem value="category">Category</SelectItem>
+                      <SelectItem value="confidence">Confidence</SelectItem>
+                      <SelectItem value="logCount">Log Count</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={sortOrder} onValueChange={setSortOrder}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="desc">High to Low</SelectItem>
+                      <SelectItem value="asc">Low to High</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Analysis Summary */}
