@@ -1,5 +1,5 @@
 # Simple Docker setup for local development
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Install curl for health checks
 RUN apk add --no-cache curl
@@ -28,8 +28,10 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Start the application in development mode using tsx (avoids build issues)
 ENV NODE_ENV=development
-# Set environment variable for Node.js 20 compatibility
-ENV NODE_OPTIONS="--experimental-import-meta-resolve"
+# Set explicit path for vite.config.ts compatibility
+ENV INIT_CWD=/app
+ENV PWD=/app
 WORKDIR /app
 
+# Use tsx with explicit loader to handle import.meta issues
 CMD ["npx", "tsx", "server/index.ts"]
