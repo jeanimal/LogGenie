@@ -28,7 +28,8 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Start the application in development mode using tsx (avoids build issues)
 ENV NODE_ENV=development
-# Set __dirname equivalent for import.meta.dirname compatibility
-ENV INIT_CWD=/app
+# Set environment variable for Node.js 20 compatibility
+ENV NODE_OPTIONS="--experimental-import-meta-resolve"
 WORKDIR /app
+
 CMD ["npx", "tsx", "server/index.ts"]

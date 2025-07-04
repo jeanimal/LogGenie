@@ -39,19 +39,16 @@ CREATE TABLE IF NOT EXISTS log_types (
 -- Create zscaler_logs table
 CREATE TABLE IF NOT EXISTS zscaler_logs (
   id SERIAL PRIMARY KEY,
-  timestamp TIMESTAMP,
-  company_id INTEGER REFERENCES companies(id),
-  log_type_id INTEGER REFERENCES log_types(id),
-  source_ip VARCHAR,
-  destination_ip VARCHAR,
-  url VARCHAR,
-  user_agent VARCHAR,
-  action VARCHAR,
-  risk_level VARCHAR,
+  timestamp TIMESTAMP NOT NULL,
+  source_ip VARCHAR NOT NULL,
+  destination_url TEXT NOT NULL,
+  action VARCHAR NOT NULL,
+  risk_level VARCHAR NOT NULL,
+  user_agent TEXT,
+  bytes_transferred INTEGER,
   response_code INTEGER,
-  bytes_sent BIGINT,
-  bytes_received BIGINT,
   category VARCHAR,
+  company_id INTEGER REFERENCES companies(id),
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -73,12 +70,12 @@ INSERT INTO companies (name) VALUES ('dev') ON CONFLICT DO NOTHING;
 INSERT INTO log_types (name, table_name) VALUES ('ZScaler Web Proxy Log', 'zscaler_logs') ON CONFLICT DO NOTHING;
 
 -- Insert some sample log data for testing
-INSERT INTO zscaler_logs (timestamp, company_id, log_type_id, source_ip, destination_ip, url, user_agent, action, risk_level, response_code, bytes_sent, bytes_received, category) VALUES
-('2025-07-04 00:18:52', 1, 1, '192.168.1.100', '142.250.191.14', 'https://www.google.com/search?q=cybersecurity+trends', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'ALLOWED', 'LOW', 200, 1024, 4096, 'Search Engines'),
-('2025-07-04 00:19:15', 1, 1, '192.168.1.101', '157.240.12.35', 'https://www.facebook.com/login', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'BLOCKED', 'MEDIUM', 403, 512, 0, 'Social Media'),
-('2025-07-04 00:19:45', 1, 1, '192.168.1.102', '104.244.42.129', 'https://twitter.com/home', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', 'ALLOWED', 'LOW', 200, 768, 2048, 'Social Media'),
-('2025-07-04 00:20:12', 1, 1, '192.168.1.103', '54.230.159.166', 'https://malicious-site.com/exploit', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'BLOCKED', 'HIGH', 403, 256, 0, 'Malware'),
-('2025-07-04 00:20:35', 1, 1, '192.168.1.104', '72.21.91.29', 'https://github.com/login', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'ALLOWED', 'LOW', 200, 1536, 8192, 'Development')
+INSERT INTO zscaler_logs (timestamp, source_ip, destination_url, action, risk_level, user_agent, bytes_transferred, response_code, category, company_id) VALUES
+('2025-07-04 00:18:52', '192.168.1.100', 'https://www.google.com/search?q=cybersecurity+trends', 'ALLOWED', 'LOW', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 4096, 200, 'Search Engines', 1),
+('2025-07-04 00:19:15', '192.168.1.101', 'https://www.facebook.com/login', 'BLOCKED', 'MEDIUM', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 512, 403, 'Social Media', 1),
+('2025-07-04 00:19:45', '192.168.1.102', 'https://twitter.com/home', 'ALLOWED', 'LOW', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', 2048, 200, 'Social Media', 1),
+('2025-07-04 00:20:12', '192.168.1.103', 'https://malicious-site.com/exploit', 'BLOCKED', 'HIGH', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 256, 403, 'Malware', 1),
+('2025-07-04 00:20:35', '192.168.1.104', 'https://github.com/login', 'ALLOWED', 'LOW', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 8192, 200, 'Development', 1)
 ON CONFLICT DO NOTHING;
 
 -- Print completion message
