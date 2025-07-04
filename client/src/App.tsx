@@ -11,7 +11,6 @@ import Upload from "@/pages/upload";
 import ViewLogs from "@/pages/view-logs";
 import Summarize from "@/pages/summarize";
 import DetectAnomalies from "@/pages/detect-anomalies";
-import LogFlow from "@/pages/log-flow";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -27,7 +26,6 @@ function Router() {
           <Route path="/view" component={ViewLogs} />
           <Route path="/summarize" component={Summarize} />
           <Route path="/detect" component={DetectAnomalies} />
-          <Route path="/flow" component={LogFlow} />
         </>
       )}
       <Route component={NotFound} />

@@ -5,7 +5,6 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertLogUploadSchema, insertZscalerLogSchema, zscalerLogs } from "@shared/schema";
 import { db } from "./db";
 import { inArray } from "drizzle-orm";
-import { gte, desc } from "drizzle-orm";
 import multer from "multer";
 
 const upload = multer({ 
@@ -245,26 +244,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Failed to fetch log entries",
         error: error instanceof Error ? error.message : 'Unknown error'
       });
-    }
-  });
-
-  // Get logs for flow visualization
-  app.get('/api/logs/flow', isAuthenticated, async (req, res) => {
-    try {
-      const timeRange = req.query.timeRange as string || '1h';
-      const hours = parseTimeRange(timeRange);
-      
-      const startTime = new Date(Date.now() - hours * 60 * 60 * 1000);
-      
-      const logs = await db.select().from(zscalerLogs)
-        .where(gte(zscalerLogs.timestamp, startTime))
-        .orderBy(desc(zscalerLogs.timestamp))
-        .limit(500); // Limit to prevent performance issues
-      
-      res.json(logs);
-    } catch (error) {
-      console.error('Error fetching flow logs:', error);
-      res.status(500).json({ message: 'Failed to fetch flow logs' });
     }
   });
 
