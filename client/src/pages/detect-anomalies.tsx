@@ -81,10 +81,14 @@ export default function DetectAnomalies() {
 
   const fetchLogsMutation = useMutation({
     mutationFn: async ({ anomalyIndex, logIds }: { anomalyIndex: number; logIds: number[] }) => {
+      console.log("Fetching logs for anomaly", anomalyIndex, "with logIds", logIds);
       const response = await apiRequest("POST", `/api/logs/by-ids`, { logIds });
-      return { anomalyIndex, logs: await response.json() };
+      const logs = await response.json();
+      console.log("Received logs:", logs);
+      return { anomalyIndex, logs };
     },
     onSuccess: ({ anomalyIndex, logs }) => {
+      console.log("Setting log details for anomaly", anomalyIndex, "with logs", logs);
       const newLogDetails = new Map(logDetails);
       newLogDetails.set(anomalyIndex, logs);
       setLogDetails(newLogDetails);
@@ -146,13 +150,20 @@ export default function DetectAnomalies() {
   };
 
   const handleViewDetails = (anomalyIndex: number, logIds: number[]) => {
+    console.log("handleViewDetails called with anomalyIndex:", anomalyIndex, "logIds:", logIds);
+    console.log("expandedAnomaly:", expandedAnomaly);
+    console.log("logDetails has anomalyIndex:", logDetails.has(anomalyIndex));
+    
     if (expandedAnomaly === anomalyIndex) {
       // Collapse if already expanded
+      console.log("Collapsing anomaly");
       setExpandedAnomaly(null);
     } else {
       // Expand and fetch log details if not already loaded
+      console.log("Expanding anomaly");
       setExpandedAnomaly(anomalyIndex);
       if (!logDetails.has(anomalyIndex)) {
+        console.log("Fetching log details");
         fetchLogsMutation.mutate({ anomalyIndex, logIds });
       }
     }
