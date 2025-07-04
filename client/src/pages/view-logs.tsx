@@ -213,30 +213,42 @@ export default function ViewLogs() {
                   </div>
                   
                   {(timelineData as any)?.earliestTimestamp && (timelineData as any)?.latestTimestamp ? (
-                    <div className="space-y-3">
-                      <Slider
-                        value={timelineRange}
-                        onValueChange={(value) => setTimelineRange(value as [number, number])}
-                        max={100}
-                        min={0}
-                        step={1}
-                        className="w-full"
-                      />
-                      
-                      <div className="flex justify-between text-xs text-gray-500">
-                        <span className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {convertSliderToDate(timelineRange[0])?.toLocaleDateString()}
-                        </span>
-                        <span className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {convertSliderToDate(timelineRange[1])?.toLocaleDateString()}
-                        </span>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs font-medium text-gray-700">
+                          <span>Start Time</span>
+                          <span>End Time</span>
+                        </div>
+                        
+                        <Slider
+                          value={timelineRange}
+                          onValueChange={(value) => setTimelineRange(value as [number, number])}
+                          max={100}
+                          min={0}
+                          step={1}
+                          className="w-full"
+                        />
+                        
+                        <div className="flex justify-between text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                          <div className="flex items-center">
+                            <Calendar className="h-3 w-3 mr-1 text-blue-500" />
+                            <span className="font-medium">From:</span>
+                            <span className="ml-1">{convertSliderToDate(timelineRange[0])?.toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <Calendar className="h-3 w-3 mr-1 text-blue-500" />
+                            <span className="font-medium">To:</span>
+                            <span className="ml-1">{convertSliderToDate(timelineRange[1])?.toLocaleDateString()}</span>
+                          </div>
+                        </div>
                       </div>
                       
-                      <div className="text-xs text-gray-400 text-center">
-                        Showing logs from {new Date((timelineData as any).earliestTimestamp).toLocaleDateString()} 
-                        to {new Date((timelineData as any).latestTimestamp).toLocaleDateString()}
+                      <div className="text-xs text-gray-400 text-center border-t pt-2">
+                        Total range: {new Date((timelineData as any).earliestTimestamp).toLocaleDateString()} 
+                        → {new Date((timelineData as any).latestTimestamp).toLocaleDateString()}
+                        <div className="mt-1">
+                          <span className="text-blue-600 font-medium">{(timelineData as any).totalLogs}</span> total logs
+                        </div>
                       </div>
                     </div>
                   ) : (

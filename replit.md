@@ -148,6 +148,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Removed schedule analysis button and enhanced clear all functionality
   - Added configurable AI parameters (temperature and max_tokens) to anomaly detection UI
   - Set default AI settings: temperature=0.2 (focused), max_tokens=2000 (standard)
+  - Implemented interactive timeline filter on View Logs page replacing static date range inputs
+  - Added dual-handle range slider allowing independent control of start and end times
+  - Created timeline API endpoint providing earliest/latest timestamps and total log counts
 
 ## Changelog
 
