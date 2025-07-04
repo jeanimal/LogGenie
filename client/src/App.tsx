@@ -24,7 +24,7 @@ function Router() {
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/upload" component={Upload} />
-          <Route path="/view" component={ViewLogs} />
+          <Route path="/view-logs" component={ViewLogs} />
           <Route path="/summarize" component={Summarize} />
           <Route path="/detect" component={DetectAnomalies} />
           <Route path="/admin" component={Admin} />

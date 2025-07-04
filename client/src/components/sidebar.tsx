@@ -20,7 +20,7 @@ export default function Sidebar() {
   const navigation = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
     { name: "Upload Logs", href: "/upload", icon: Upload },
-    { name: "View Logs", href: "/view", icon: FileText },
+    { name: "View Logs", href: "/view-logs", icon: FileText },
     { name: "Summarize", href: "/summarize", icon: BarChart },
     { name: "Detect Anomalies", href: "/detect", icon: Search },
     { name: "Admin Panel", href: "/admin", icon: Settings },
