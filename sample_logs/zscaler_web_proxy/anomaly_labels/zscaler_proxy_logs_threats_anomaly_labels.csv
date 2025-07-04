@@ -1,0 +1,7 @@
+Anomaly type,Related log rows,Related users,Related IP Addresses,Related actions,Confidence,Recommended action
+Credential Stuffing,"0, 9, 10, 11","user1, user2","197.123.1.2, 192.168.1.5","BLOCK, BLOCK, ALLOW, BLOCK",95,Investigate login attempts and implement CAPTCHA or multi-factor authentication.
+Access to Phishing URLs,"3, 18, 30, 45","user4, user8","197.123.1.2, 192.168.1.6","BLOCK, BLOCK",100,Block access to phishing URLs and educate users on identifying phishing attempts.
+Excessive Requests,"0, 5, 7, 10, 12","user5, user9","192.168.1.4, 192.168.1.8","BLOCK, ALLOW",85,"Investigate potential scraping or DDoS activity, throttle excessive requests."
+Large file transfers,"13, 20, 35","user1, user7","192.168.1.5, 192.168.1.2","ALLOW, BLOCK",70,"Monitor large data transfers, investigate for potential data exfiltration."
+Access from Suspicious IPs,"2, 6, 9, 12","user3, user5","197.123.45.78, 197.123.1.2","BLOCK, BLOCK",90,"Review access logs for suspicious IPs, consider blacklisting malicious IPs."
+Unusual Category Access,"5, 15, 25, 40","user8, user6","192.168.1.8, 192.168.1.9","ALLOW, BLOCK",75,"Investigate unusual access to sensitive or unauthorized categories (e.g., HR documents)."
