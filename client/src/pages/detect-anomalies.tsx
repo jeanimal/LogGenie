@@ -26,6 +26,9 @@ export default function DetectAnomalies() {
   const [timeRange, setTimeRange] = useState("7d");
   const [anomalies, setAnomalies] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
+  const [dismissedAnomalies, setDismissedAnomalies] = useState<Set<number>>(new Set());
+  const [expandedAnomaly, setExpandedAnomaly] = useState<number | null>(null);
+  const [showDismissed, setShowDismissed] = useState(false);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -97,6 +100,30 @@ export default function DetectAnomalies() {
         return <Badge variant="outline">{severity}</Badge>;
     }
   };
+
+  // Handler functions
+  const handleDismissAnomaly = (logId: number) => {
+    setDismissedAnomalies(prev => {
+      const newSet = new Set(prev);
+      newSet.add(logId);
+      return newSet;
+    });
+    toast({
+      title: "Anomaly Dismissed",
+      description: "The anomaly has been marked as dismissed.",
+    });
+  };
+
+  const handleViewDetails = (logId: number) => {
+    setExpandedAnomaly(expandedAnomaly === logId ? null : logId);
+  };
+
+  // Filter anomalies based on dismissed state
+  const visibleAnomalies = showDismissed 
+    ? anomalies.filter(anomaly => dismissedAnomalies.has(anomaly.logId))
+    : anomalies.filter(anomaly => !dismissedAnomalies.has(anomaly.logId));
+  
+  const dismissedCount = anomalies.filter(anomaly => dismissedAnomalies.has(anomaly.logId)).length;
 
   const getSeverityClass = (severity: string) => {
     switch (severity?.toLowerCase()) {
@@ -232,9 +259,21 @@ export default function DetectAnomalies() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-gray-900">Detection Results</h3>
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                    {anomalies.length} Anomalies Detected
-                  </Badge>
+                  <div className="flex items-center space-x-4">
+                    {dismissedCount > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowDismissed(!showDismissed)}
+                        className="text-gray-600"
+                      >
+                        {showDismissed ? "Show Active" : `Show Dismissed (${dismissedCount})`}
+                      </Button>
+                    )}
+                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                      {showDismissed ? `${dismissedCount} Dismissed` : `${visibleAnomalies.length} Active`}
+                    </Badge>
+                  </div>
                 </div>
 
                 {/* Analysis Summary */}
@@ -288,7 +327,22 @@ export default function DetectAnomalies() {
 
                 {/* Anomaly Cards */}
                 <div className="space-y-4">
-                  {anomalies.map((anomaly, index) => (
+                  {visibleAnomalies.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="text-gray-400 mb-2">
+                        {showDismissed ? "No dismissed anomalies" : "No active anomalies"}
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {showDismissed 
+                          ? "All anomalies are currently active" 
+                          : dismissedCount > 0 
+                            ? `${dismissedCount} anomaly(ies) have been dismissed`
+                            : "Great! No threats detected in the analyzed logs"
+                        }
+                      </p>
+                    </div>
+                  ) : (
+                    visibleAnomalies.map((anomaly, index) => (
                     <div
                       key={anomaly.logId || index}
                       className={`border rounded-lg p-4 ${getSeverityClass(anomaly.severity)}`}
@@ -322,18 +376,73 @@ export default function DetectAnomalies() {
                           )}
                         </div>
                         <div className="flex space-x-2 ml-4">
-                          <Button variant="link" size="sm" className="text-primary hover:text-blue-700">
+                          <Button 
+                            variant="link" 
+                            size="sm" 
+                            className="text-primary hover:text-blue-700"
+                            onClick={() => handleViewDetails(anomaly.logId)}
+                          >
                             <Eye className="mr-1 h-3 w-3" />
-                            View Details
+                            {expandedAnomaly === anomaly.logId ? "Hide Details" : "View Details"}
                           </Button>
-                          <Button variant="link" size="sm" className="text-gray-600 hover:text-gray-800">
+                          <Button 
+                            variant="link" 
+                            size="sm" 
+                            className="text-gray-600 hover:text-gray-800"
+                            onClick={() => handleDismissAnomaly(anomaly.logId)}
+                          >
                             <X className="mr-1 h-3 w-3" />
                             Dismiss
                           </Button>
                         </div>
                       </div>
+                      
+                      {/* Expanded Details Section */}
+                      {expandedAnomaly === anomaly.logId && (
+                        <div className="mt-4 p-4 bg-gray-50 rounded-lg border-t">
+                          <h5 className="font-medium text-gray-900 mb-3">Detailed Analysis</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <strong className="text-gray-700">Log ID:</strong>
+                              <p className="text-gray-600">{anomaly.logId}</p>
+                            </div>
+                            <div>
+                              <strong className="text-gray-700">Severity Level:</strong>
+                              <p className="text-gray-600 capitalize">{anomaly.severity}</p>
+                            </div>
+                            <div>
+                              <strong className="text-gray-700">Category:</strong>
+                              <p className="text-gray-600">{anomaly.category}</p>
+                            </div>
+                            <div>
+                              <strong className="text-gray-700">Confidence Score:</strong>
+                              <p className="text-gray-600">{Math.round((anomaly.confidence || 0) * 100)}%</p>
+                            </div>
+                          </div>
+                          
+                          {anomaly.indicators && anomaly.indicators.length > 0 && (
+                            <div className="mt-4">
+                              <strong className="text-gray-700">Technical Indicators:</strong>
+                              <div className="mt-2 space-y-1">
+                                {anomaly.indicators.map((indicator: string, index: number) => (
+                                  <div key={index} className="flex items-start">
+                                    <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5 mr-2 flex-shrink-0"></div>
+                                    <span className="text-gray-600 text-sm">{indicator}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="mt-4">
+                            <strong className="text-gray-700">Recommended Response:</strong>
+                            <p className="text-gray-600 text-sm mt-1">{anomaly.recommendedAction}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    ))
+                  )}
                 </div>
 
                 {/* Action Buttons */}
