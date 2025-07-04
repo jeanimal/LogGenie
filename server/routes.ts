@@ -71,6 +71,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Log timestamp range API
+  app.get("/api/logs/timeline-range", isAuthenticated, async (req, res) => {
+    try {
+      const companyId = req.query.companyId ? parseInt(req.query.companyId as string) : undefined;
+      const range = await storage.getLogTimestampRange(companyId);
+      res.json(range);
+    } catch (error) {
+      console.error("Error fetching log timeline range:", error);
+      res.status(500).json({ message: "Failed to fetch timeline range" });
+    }
+  });
+
   // Logs API
   app.get("/api/logs", isAuthenticated, async (req, res) => {
     try {

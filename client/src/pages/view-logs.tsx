@@ -7,6 +7,7 @@ import Sidebar from "@/components/sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -23,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search } from "lucide-react";
+import { Search, Calendar, Clock } from "lucide-react";
 
 export default function ViewLogs() {
   const { toast } = useToast();
@@ -31,6 +32,9 @@ export default function ViewLogs() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [timelineRange, setTimelineRange] = useState<[number, number]>([0, 100]);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -52,14 +56,54 @@ export default function ViewLogs() {
     enabled: isAuthenticated,
   });
 
+  const { data: timelineData } = useQuery({
+    queryKey: ["/api/logs/timeline-range", companyFilter === "all" ? "" : companyFilter],
+    enabled: isAuthenticated,
+  });
+
   const { data: logsData, isLoading: logsLoading } = useQuery({
-    queryKey: ["/api/logs", page, limit, companyFilter === "all" ? "" : companyFilter],
+    queryKey: ["/api/logs", page, limit, companyFilter === "all" ? "" : companyFilter, startDate, endDate],
     enabled: isAuthenticated,
   });
 
   const formatTimestamp = (timestamp: string) => {
     return new Date(timestamp).toLocaleString();
   };
+
+  // Timeline helper functions
+  const getTimelineRange = () => {
+    const data = timelineData as any;
+    if (!data?.earliestTimestamp || !data?.latestTimestamp) {
+      return { min: 0, max: 100, earliest: null, latest: null };
+    }
+    const earliest = new Date(data.earliestTimestamp);
+    const latest = new Date(data.latestTimestamp);
+    return { min: 0, max: 100, earliest, latest };
+  };
+
+  const convertSliderToDate = (value: number) => {
+    const { earliest, latest } = getTimelineRange();
+    if (!earliest || !latest) return null;
+    
+    const range = latest.getTime() - earliest.getTime();
+    const timestamp = earliest.getTime() + (range * value / 100);
+    return new Date(timestamp);
+  };
+
+  const updateDateRange = (sliderValues: [number, number]) => {
+    const startDateObj = convertSliderToDate(sliderValues[0]);
+    const endDateObj = convertSliderToDate(sliderValues[1]);
+    
+    if (startDateObj && endDateObj) {
+      setStartDate(startDateObj.toISOString());
+      setEndDate(endDateObj.toISOString());
+    }
+  };
+
+  // Update timeline when slider changes
+  useEffect(() => {
+    updateDateRange(timelineRange);
+  }, [timelineRange, timelineData]);
 
   const getActionBadge = (action: string) => {
     switch (action) {
@@ -131,7 +175,7 @@ export default function ViewLogs() {
           {/* Filters */}
           <Card className="mb-6">
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2">Company</Label>
                   <Select value={companyFilter} onValueChange={setCompanyFilter}>
@@ -148,6 +192,7 @@ export default function ViewLogs() {
                     </SelectContent>
                   </Select>
                 </div>
+                
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2">Log Type</Label>
                   <Select>
@@ -160,18 +205,45 @@ export default function ViewLogs() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2">Date Range</Label>
-                  <input
-                    type="date"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button className="w-full bg-primary hover:bg-blue-700 text-white">
-                    <Search className="mr-2 h-4 w-4" />
-                    Filter
-                  </Button>
+
+                <div className="col-span-1 md:col-span-1">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                    <Label className="text-sm font-medium text-gray-700">Timeline Filter</Label>
+                  </div>
+                  
+                  {(timelineData as any)?.earliestTimestamp && (timelineData as any)?.latestTimestamp ? (
+                    <div className="space-y-3">
+                      <Slider
+                        value={timelineRange}
+                        onValueChange={(value) => setTimelineRange(value as [number, number])}
+                        max={100}
+                        min={0}
+                        step={1}
+                        className="w-full"
+                      />
+                      
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span className="flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {convertSliderToDate(timelineRange[0])?.toLocaleDateString()}
+                        </span>
+                        <span className="flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {convertSliderToDate(timelineRange[1])?.toLocaleDateString()}
+                        </span>
+                      </div>
+                      
+                      <div className="text-xs text-gray-400 text-center">
+                        Showing logs from {new Date((timelineData as any).earliestTimestamp).toLocaleDateString()} 
+                        to {new Date((timelineData as any).latestTimestamp).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-400 py-4">
+                      Loading timeline data...
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>

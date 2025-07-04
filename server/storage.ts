@@ -16,7 +16,7 @@ import {
   type InsertLogUpload,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, count, and, gte, lte } from "drizzle-orm";
+import { eq, desc, count, and, gte, lte, sql, min, max } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -65,6 +65,13 @@ export interface IStorage {
     riskScore: number;
     status: string;
   }>>;
+  
+  // Timeline operations
+  getLogTimestampRange(companyId?: number): Promise<{
+    earliestTimestamp: string | null;
+    latestTimestamp: string | null;
+    totalLogs: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -238,6 +245,37 @@ export class DatabaseStorage implements IStorage {
       riskScore: Math.random() * 10, // Placeholder calculation
       status: row.eventCount > 20 ? 'High Risk' : row.eventCount > 10 ? 'Medium Risk' : 'Low Risk',
     }));
+  }
+
+  async getLogTimestampRange(companyId?: number): Promise<{
+    earliestTimestamp: string | null;
+    latestTimestamp: string | null;
+    totalLogs: number;
+  }> {
+    // Use a simpler approach by getting all logs first
+    const logs = await this.getZscalerLogs({
+      page: 1,
+      limit: 999999, // Get all logs
+      companyId,
+    });
+    
+    if (logs.logs.length === 0) {
+      return {
+        earliestTimestamp: null,
+        latestTimestamp: null,
+        totalLogs: 0,
+      };
+    }
+    
+    const timestamps = logs.logs.map(log => new Date(log.timestamp));
+    const earliest = new Date(Math.min(...timestamps.map(d => d.getTime())));
+    const latest = new Date(Math.max(...timestamps.map(d => d.getTime())));
+    
+    return {
+      earliestTimestamp: earliest.toISOString(),
+      latestTimestamp: latest.toISOString(),
+      totalLogs: logs.total,
+    };
   }
 }
 
