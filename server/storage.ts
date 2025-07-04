@@ -216,7 +216,7 @@ export class DatabaseStorage implements IStorage {
     return {
       totalLogs: totalLogsResult[0].count,
       recentUploads: recentUploadsResult[0].count,
-      anomalies: 7, // Placeholder for LLM analysis
+      anomalies: 0, // Anomalies are detected on-demand, not stored persistently
       companies: companiesResult[0].count,
       blockedRequests: blockedRequestsResult[0].count,
       uniqueIPs: uniqueIPsResult.length,

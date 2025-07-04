@@ -161,6 +161,8 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Created secure admin API endpoints for bulk log deletion operations
   - Fixed admin panel layout structure with proper sidebar integration and authentication
   - Resolved DOM nesting warnings in confirmation dialogs for better HTML validation
+  - Fixed analytics anomaly count to correctly show 0 since anomalies are detected on-demand, not stored persistently
+  - Added documentation clarifying that log deletion automatically cleans anomaly detection since it's real-time
 
 ## Changelog
 
