@@ -161,11 +161,6 @@ npm run db:push
 
 The application will automatically create the necessary database tables. Docker containers include sample data for immediate testing.
 
-**Note:** You may see a browserslist warning about outdated browser data. This is harmless but can be fixed with:
-```bash
-npx update-browserslist-db@latest
-```
-
 ### Development Mode
 
 For local development without Docker:
