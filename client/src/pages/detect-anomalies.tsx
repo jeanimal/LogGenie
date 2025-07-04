@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Info, AlertTriangle, Eye, X, Plus, Minus } from "lucide-react";
+import { Search, Info, AlertTriangle, Eye, X, Plus, Minus, Download } from "lucide-react";
 
 export default function DetectAnomalies() {
   const { toast } = useToast();
@@ -90,6 +90,75 @@ export default function DetectAnomalies() {
     const newCriteria = [...sortCriteria];
     newCriteria[index] = { field, order };
     setSortCriteria(newCriteria);
+  };
+
+  // Export report functionality
+  const exportReport = () => {
+    if (anomalies.length === 0) {
+      toast({
+        title: "No Data to Export",
+        description: "Please run anomaly detection first to generate a report.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const reportData = {
+      reportMetadata: {
+        generatedAt: new Date().toISOString(),
+        reportType: "Cybersecurity Anomaly Detection Report",
+        analysisConfiguration: {
+          analysisType,
+          sensitivity,
+          timeRange,
+        },
+        sortingCriteria: sortCriteria,
+      },
+      executiveSummary: summary,
+      anomalies: sortAnomalies(anomalies).map((anomaly, index) => ({
+        id: index + 1,
+        severity: anomaly.severity,
+        category: anomaly.category,
+        description: anomaly.description,
+        confidence: Math.round((anomaly.confidence || 0) * 100),
+        logIds: anomaly.logIds || [],
+        logCount: anomaly.logIds?.length || 1,
+        indicators: anomaly.indicators || [],
+        recommendedAction: anomaly.recommendedAction,
+        status: dismissedAnomalies.has(anomalies.indexOf(anomaly)) ? "dismissed" : "active",
+      })),
+      statisticalSummary: {
+        totalAnomalies: anomalies.length,
+        activeAnomalies: anomalies.filter((_, index) => !dismissedAnomalies.has(index)).length,
+        dismissedAnomalies: dismissedAnomalies.size,
+        severityBreakdown: {
+          critical: anomalies.filter(a => a.severity === 'critical').length,
+          high: anomalies.filter(a => a.severity === 'high').length,
+          medium: anomalies.filter(a => a.severity === 'medium').length,
+          low: anomalies.filter(a => a.severity === 'low').length,
+        },
+      },
+    };
+
+    // Convert to JSON string with pretty formatting
+    const jsonContent = JSON.stringify(reportData, null, 2);
+    
+    // Create and download the file
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `anomaly-detection-report-${timestamp}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Report Exported",
+      description: `Anomaly detection report saved as anomaly-detection-report-${timestamp}.json`,
+    });
   };
 
   // Redirect to home if not authenticated
@@ -667,13 +736,27 @@ export default function DetectAnomalies() {
 
                 {/* Action Buttons */}
                 <div className="mt-8 flex space-x-4">
-                  <Button className="bg-primary hover:bg-blue-700 text-white">
+                  <Button 
+                    onClick={exportReport}
+                    className="bg-primary hover:bg-blue-700 text-white"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
                     Export Report
                   </Button>
-                  <Button variant="secondary">
-                    Schedule Analysis
-                  </Button>
-                  <Button variant="outline">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setAnomalies([]);
+                      setSummary(null);
+                      setDismissedAnomalies(new Set());
+                      setExpandedAnomaly(null);
+                      setLogDetails(new Map());
+                      toast({
+                        title: "Results Cleared",
+                        description: "All anomaly detection results have been cleared.",
+                      });
+                    }}
+                  >
                     Clear All
                   </Button>
                 </div>

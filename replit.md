@@ -144,6 +144,8 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Fixed "View Details" rendering to properly show expanded log information for multi-log anomalies
   - Implemented flexible multi-level sorting system allowing users to sort by multiple criteria in priority order
   - Added dynamic sort criteria management with add/remove functionality (up to 4 criteria)
+  - Implemented comprehensive export report functionality with JSON format download
+  - Removed schedule analysis button and enhanced clear all functionality
 
 ## Changelog
 
