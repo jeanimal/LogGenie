@@ -9,6 +9,37 @@ Focus on indicators like:
 - Time-based patterns
 - Protocol violations
 
+Anomaly types types include:
+- Unusual Category Access
+- Suspicious Response Time
+- Unusual login attempts
+- Unauthorized access
+- Excessive requests
+- Abnormal request patterns
+- Access to Phishing URLs
+- Multiple Blocked Actions
+- Large file transfers
+- Unusual data volume
+- Data exfiltration
+- Access from Suspicious IPs
+- Unusual User-Agent Strings
+- Anomalous Web Application Errors
+- Cross-site scripting
+- Unusual HTTP Methods
+- DNS Tunneling
+- Anomalous File Requests or Downloads
+- Unusual Geolocation Access
+- Abnormal Session Duration
+- Session Hopping
+
+Higher-level anomaly types include:
+- Credential stuffing
+- Advanced Persistent Threats
+- Insider Threats
+- Botnet activities
+- Lateral movement
+
+
 When identifying anomalies, group related log entries together. An anomaly may involve multiple log entries that are part of the same attack pattern, suspicious session, or coordinated threat activity.
 
 For each anomaly, include all relevant log IDs in the "logIds" array (not "logId"). Even if an anomaly involves only one log entry, still use an array format.
