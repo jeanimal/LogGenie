@@ -54,8 +54,8 @@ export default function Upload() {
 
   // Set default values when data loads
   useEffect(() => {
-    if (companies && companies.length > 0 && !company) {
-      const devCompany = companies.find((c: any) => c.name === "dev");
+    if ((companies as any)?.length > 0 && !company) {
+      const devCompany = (companies as any)?.find((c: any) => c.name === "dev");
       if (devCompany) {
         setCompany(devCompany.id.toString());
       }
@@ -63,8 +63,8 @@ export default function Upload() {
   }, [companies, company]);
 
   useEffect(() => {
-    if (logTypes && logTypes.length > 0 && !logType) {
-      const zscalerType = logTypes.find((t: any) => t.name === "ZScaler Web Proxy Log");
+    if ((logTypes as any)?.length > 0 && !logType) {
+      const zscalerType = (logTypes as any)?.find((t: any) => t.name === "ZScaler Web Proxy Log");
       if (zscalerType) {
         setLogType(zscalerType.id.toString());
       }
@@ -73,7 +73,8 @@ export default function Upload() {
 
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      return await apiRequest("POST", "/api/upload", formData);
+      const response = await apiRequest("POST", "/api/upload", formData);
+      return await response.json();
     },
     onSuccess: (response) => {
       toast({
@@ -178,7 +179,7 @@ export default function Upload() {
                       <SelectValue placeholder="Select company" />
                     </SelectTrigger>
                     <SelectContent>
-                      {companies?.map((comp: any) => (
+                      {(companies as any)?.map?.((comp: any) => (
                         <SelectItem key={comp.id} value={comp.id.toString()}>
                           {comp.name} {comp.name === "dev" && "(Default)"}
                         </SelectItem>
@@ -195,7 +196,7 @@ export default function Upload() {
                       <SelectValue placeholder="Select log type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {logTypes?.map((type: any) => (
+                      {(logTypes as any)?.map?.((type: any) => (
                         <SelectItem key={type.id} value={type.id.toString()}>
                           {type.name}
                         </SelectItem>
