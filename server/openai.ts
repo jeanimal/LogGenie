@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 /*
 Follow these instructions when using this blueprint:
@@ -9,6 +11,17 @@ Follow these instructions when using this blueprint:
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Function to load system prompts from files
+function loadSystemPrompt(promptFile: string): string {
+  try {
+    const promptPath = join(process.cwd(), 'prompts', promptFile);
+    return readFileSync(promptPath, 'utf-8').trim();
+  } catch (error) {
+    console.error(`Failed to load prompt file ${promptFile}:`, error);
+    throw new Error(`Could not load system prompt: ${promptFile}`);
+  }
+}
 
 export interface AnomalyDetectionRequest {
   logs: Array<{
@@ -48,24 +61,14 @@ export interface AnomalyDetectionResult {
 export async function detectAnomalies(request: AnomalyDetectionRequest): Promise<AnomalyDetectionResult> {
   try {
     const prompt = createAnomalyDetectionPrompt(request);
+    const systemPrompt = loadSystemPrompt('anomaly-detection-system.txt');
     
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [
         {
           role: "system",
-          content: `You are a cybersecurity expert specializing in log analysis and threat detection. 
-          Analyze web proxy logs for security anomalies, suspicious patterns, and potential threats.
-          Focus on indicators like:
-          - Unusual traffic patterns
-          - Suspicious domains or URLs
-          - Blocked requests indicating attack attempts
-          - Unusual user agents or request patterns
-          - Geographic anomalies
-          - Time-based patterns
-          - Protocol violations
-          
-          Respond with JSON in the exact format specified in the user prompt.`
+          content: systemPrompt
         },
         {
           role: "user",

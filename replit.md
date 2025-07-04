@@ -52,10 +52,11 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
 - **Real-time Updates**: Live dashboard with current statistics
 
 ### Anomaly Detection
-- **AI Integration**: LLM-ready architecture with placeholder endpoints
+- **AI Integration**: OpenAI GPT-4o integration for intelligent threat analysis
 - **Configurable Analysis**: Multiple sensitivity levels and time ranges
 - **Threat Detection**: Cybersecurity-focused anomaly identification
 - **Results Management**: Structured anomaly reporting and visualization
+- **Prompt Management**: Modular system prompts stored in `/prompts` directory
 
 ## Data Flow
 
@@ -135,6 +136,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Enhanced anomaly detection page with comprehensive AI analysis display
   - Added AI-powered log summarization with detailed insights and recommendations
   - All AI features now fully functional with OpenAI integration (VERIFIED WORKING)
+  - Added "View Details" functionality to display actual log entries for each detected anomaly
+  - Created modular prompt management system with dedicated prompts directory
+  - Extracted LLM system prompts to external files for easier maintenance and modification
 
 ## Changelog
 
