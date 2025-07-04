@@ -147,18 +147,19 @@ volumes:
 
 ### Database Setup
 
-The application will automatically create the necessary database tables on first run. To manually set up the database:
+#### For Docker Development
+The Docker setup automatically initializes the database with tables and sample data using the `init.sql` script.
 
+#### For Replit Development
 ```bash
 # Install dependencies
 npm install
 
 # Push database schema
 npm run db:push
-
-# (Optional) Seed with sample data
-npm run db:seed
 ```
+
+The application will automatically create the necessary database tables. Docker containers include sample data for immediate testing.
 
 ### Development Mode
 
