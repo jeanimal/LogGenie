@@ -139,6 +139,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Added "View Details" functionality to display actual log entries for each detected anomaly
   - Created modular prompt management system with dedicated prompts directory
   - Extracted LLM system prompts to external files for easier maintenance and modification
+  - Enhanced anomaly detection to support multiple log IDs per anomaly for comprehensive threat analysis
+  - Updated UI to display log count badges and handle grouped suspicious activities
+  - Fixed "View Details" rendering to properly show expanded log information for multi-log anomalies
 
 ## Changelog
 
