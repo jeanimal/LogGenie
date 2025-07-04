@@ -80,13 +80,13 @@ export default function DetectAnomalies() {
   });
 
   const fetchLogsMutation = useMutation({
-    mutationFn: async (logIds: number[]) => {
+    mutationFn: async ({ anomalyIndex, logIds }: { anomalyIndex: number; logIds: number[] }) => {
       const response = await apiRequest("POST", `/api/logs/by-ids`, { logIds });
-      return await response.json();
+      return { anomalyIndex, logs: await response.json() };
     },
-    onSuccess: (logs, logIds) => {
+    onSuccess: ({ anomalyIndex, logs }) => {
       const newLogDetails = new Map(logDetails);
-      newLogDetails.set(logIds[0], logs); // Using first logId as key since we're fetching for one anomaly
+      newLogDetails.set(anomalyIndex, logs);
       setLogDetails(newLogDetails);
     },
     onError: (error) => {
@@ -133,10 +133,10 @@ export default function DetectAnomalies() {
   };
 
   // Handler functions
-  const handleDismissAnomaly = (logId: number) => {
+  const handleDismissAnomaly = (anomalyIndex: number) => {
     setDismissedAnomalies(prev => {
       const newSet = new Set(prev);
-      newSet.add(logId);
+      newSet.add(anomalyIndex);
       return newSet;
     });
     toast({
@@ -145,25 +145,25 @@ export default function DetectAnomalies() {
     });
   };
 
-  const handleViewDetails = (logId: number) => {
-    if (expandedAnomaly === logId) {
+  const handleViewDetails = (anomalyIndex: number, logIds: number[]) => {
+    if (expandedAnomaly === anomalyIndex) {
       // Collapse if already expanded
       setExpandedAnomaly(null);
     } else {
       // Expand and fetch log details if not already loaded
-      setExpandedAnomaly(logId);
-      if (!logDetails.has(logId)) {
-        fetchLogsMutation.mutate([logId]);
+      setExpandedAnomaly(anomalyIndex);
+      if (!logDetails.has(anomalyIndex)) {
+        fetchLogsMutation.mutate({ anomalyIndex, logIds });
       }
     }
   };
 
   // Filter anomalies based on dismissed state
   const visibleAnomalies = showDismissed 
-    ? anomalies.filter(anomaly => dismissedAnomalies.has(anomaly.logId))
-    : anomalies.filter(anomaly => !dismissedAnomalies.has(anomaly.logId));
+    ? anomalies.filter((anomaly, index) => dismissedAnomalies.has(index))
+    : anomalies.filter((anomaly, index) => !dismissedAnomalies.has(index));
   
-  const dismissedCount = anomalies.filter(anomaly => dismissedAnomalies.has(anomaly.logId)).length;
+  const dismissedCount = anomalies.filter((anomaly, index) => dismissedAnomalies.has(index)).length;
 
   const getSeverityClass = (severity: string) => {
     switch (severity?.toLowerCase()) {
@@ -382,17 +382,21 @@ export default function DetectAnomalies() {
                       </p>
                     </div>
                   ) : (
-                    visibleAnomalies.map((anomaly, index) => (
-                    <div
-                      key={anomaly.logId || index}
-                      className={`border rounded-lg p-4 ${getSeverityClass(anomaly.severity)}`}
-                    >
+                    visibleAnomalies.map((anomaly, displayIndex) => {
+                      const originalIndex = anomalies.indexOf(anomaly);
+                      return (
+                        <div
+                          key={originalIndex}
+                          className={`border rounded-lg p-4 ${getSeverityClass(anomaly.severity)}`}
+                        >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
                             {getSeverityBadge(anomaly.severity)}
                             <Badge variant="outline" className="text-xs">{anomaly.category}</Badge>
-                            <span className="text-sm text-gray-500">Log ID: {anomaly.logId}</span>
+                            <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                              {anomaly.logIds?.length || 1} log{(anomaly.logIds?.length || 1) > 1 ? 's' : ''}
+                            </Badge>
                             <span className="text-sm text-gray-500">•</span>
                             <span className="text-sm text-gray-500">
                               Confidence: {Math.round((anomaly.confidence || 0) * 100)}%
@@ -420,16 +424,16 @@ export default function DetectAnomalies() {
                             variant="link" 
                             size="sm" 
                             className="text-primary hover:text-blue-700"
-                            onClick={() => handleViewDetails(anomaly.logId)}
+                            onClick={() => handleViewDetails(originalIndex, anomaly.logIds || [])}
                           >
                             <Eye className="mr-1 h-3 w-3" />
-                            {expandedAnomaly === anomaly.logId ? "Hide Details" : "View Details"}
+                            {expandedAnomaly === originalIndex ? "Hide Details" : "View Details"}
                           </Button>
                           <Button 
                             variant="link" 
                             size="sm" 
                             className="text-gray-600 hover:text-gray-800"
-                            onClick={() => handleDismissAnomaly(anomaly.logId)}
+                            onClick={() => handleDismissAnomaly(originalIndex)}
                           >
                             <X className="mr-1 h-3 w-3" />
                             Dismiss
@@ -488,9 +492,9 @@ export default function DetectAnomalies() {
                               )}
                             </div>
                             
-                            {logDetails.has(anomaly.logId) ? (
+                            {logDetails.has(originalIndex) ? (
                               <div className="space-y-3">
-                                {logDetails.get(anomaly.logId)?.map((log: any, logIndex: number) => (
+                                {logDetails.get(originalIndex)?.map((log: any, logIndex: number) => (
                                   <div key={logIndex} className="bg-gray-50 rounded-md p-3 text-sm font-mono">
                                     <div className="grid grid-cols-2 gap-2 text-xs">
                                       <div><span className="font-semibold">Timestamp:</span> {new Date(log.timestamp).toLocaleString()}</div>
@@ -527,8 +531,9 @@ export default function DetectAnomalies() {
                           </div>
                         </div>
                       )}
-                    </div>
-                    ))
+                        </div>
+                      );
+                    })
                   )}
                 </div>
 

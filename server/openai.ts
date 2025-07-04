@@ -41,7 +41,7 @@ export interface AnomalyDetectionRequest {
 
 export interface AnomalyDetectionResult {
   anomalies: Array<{
-    logId: number;
+    logIds: number[];
     severity: 'low' | 'medium' | 'high' | 'critical';
     category: string;
     description: string;
@@ -118,7 +118,7 @@ Respond with JSON in this exact format:
 {
   "anomalies": [
     {
-      "logId": number,
+      "logIds": [array, of, log, id, numbers],
       "severity": "low|medium|high|critical",
       "category": "malware|phishing|data_exfiltration|brute_force|suspicious_traffic|policy_violation|other",
       "description": "Human-readable description of the anomaly",

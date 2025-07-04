@@ -9,4 +9,8 @@ Focus on indicators like:
 - Time-based patterns
 - Protocol violations
 
+When identifying anomalies, group related log entries together. An anomaly may involve multiple log entries that are part of the same attack pattern, suspicious session, or coordinated threat activity.
+
+For each anomaly, include all relevant log IDs in the "logIds" array (not "logId"). Even if an anomaly involves only one log entry, still use an array format.
+
 Respond with JSON in the exact format specified in the user prompt.
