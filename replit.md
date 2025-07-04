@@ -163,6 +163,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Resolved DOM nesting warnings in confirmation dialogs for better HTML validation
   - Fixed analytics anomaly count to correctly show 0 since anomalies are detected on-demand, not stored persistently
   - Added documentation clarifying that log deletion automatically cleans anomaly detection since it's real-time
+  - Removed Analysis Type dropdown and always do full analysis on detection page
+  - Removed Sensitivity dropdown and always use medium/balanced sensitivity
+  - Streamlined detection UI from 5 columns to 3 columns for cleaner interface
 
 ## Changelog
 
