@@ -161,6 +161,13 @@ npm run db:push
 
 The application will automatically create the necessary database tables. Docker containers include sample data for immediate testing.
 
+#### Authentication in Docker
+Docker development uses a simplified authentication system with a mock user account:
+- **Email**: developer@localhost.com  
+- **Name**: Dev User
+- Click "Log In" to automatically authenticate with the development account
+- No external OAuth configuration required for local testing
+
 ### Development Mode
 
 For local development without Docker:

@@ -66,11 +66,65 @@ async function upsertUser(
   });
 }
 
+// Local development auth setup (Docker/standalone)
+async function setupLocalAuth(app: Express) {
+  // Create a mock user for development
+  const mockUser = {
+    claims: {
+      sub: "dev-user-1",
+      email: "developer@localhost.com",
+      first_name: "Dev",
+      last_name: "User",
+      profile_image_url: "https://via.placeholder.com/150",
+      exp: Math.floor(Date.now() / 1000) + 3600 * 24 * 7 // 1 week
+    }
+  };
+
+  // Ensure the mock user exists in database
+  await storage.upsertUser({
+    id: mockUser.claims.sub,
+    email: mockUser.claims.email,
+    firstName: mockUser.claims.first_name,
+    lastName: mockUser.claims.last_name,
+    profileImageUrl: mockUser.claims.profile_image_url,
+  });
+
+  // Simple auth routes for development
+  app.get("/api/login", (req, res) => {
+    req.login(mockUser, (err) => {
+      if (err) return res.status(500).json({ message: "Login failed" });
+      res.redirect("/");
+    });
+  });
+
+  app.get("/api/logout", (req, res) => {
+    req.logout(() => {
+      res.redirect("/");
+    });
+  });
+
+  app.get("/api/callback", (req, res) => {
+    res.redirect("/");
+  });
+
+  passport.serializeUser((user: Express.User, cb) => cb(null, user));
+  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+}
+
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Check if running in Docker/local development mode
+  const isLocalDevelopment = process.env.USE_LOCAL_AUTH === 'true' || process.env.NODE_ENV === 'development' && process.env.REPL_ID === 'dev-placeholder';
+  
+  if (isLocalDevelopment) {
+    // Setup development auth bypass
+    await setupLocalAuth(app);
+    return;
+  }
 
   const config = await getOidcConfig();
 
@@ -130,7 +184,18 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  // For local development, skip token validation
+  const isLocalDevelopment = process.env.USE_LOCAL_AUTH === 'true' || process.env.NODE_ENV === 'development' && process.env.REPL_ID === 'dev-placeholder';
+  if (isLocalDevelopment) {
+    return next();
+  }
+
+  // Production Replit Auth validation
+  if (!user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 

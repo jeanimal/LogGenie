@@ -7,9 +7,10 @@ services:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:password@db:5432/loggenie
       - SESSION_SECRET=change-this-to-a-secure-random-key
-      - REPLIT_DOMAINS=localhost:3000
+      - REPLIT_DOMAINS=localhost
       - ISSUER_URL=https://replit.com/oidc
-      - REPL_ID=your-repl-id
+      - REPL_ID=dev-placeholder
+      - USE_LOCAL_AUTH=true
     depends_on:
       db:
         condition: service_healthy
