@@ -85,8 +85,6 @@ REPL_ID=your-repl-id
 Create a `docker-compose.yml` file:
 
 ```yaml
-version: '3.8'
-
 services:
   app:
     build: .
