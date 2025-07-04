@@ -152,6 +152,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Added dual-handle range slider allowing independent control of start and end times
   - Created timeline API endpoint providing earliest/latest timestamps and total log counts
   - Removed unused test_logs.csv file - application uses programmatically generated sample data
+  - Removed automatic generation of random sample logs when server starts
+  - Updated log parsing to handle actual CSV data instead of generating random data
+  - Application now starts with empty database requiring manual log uploads
 
 ## Changelog
 

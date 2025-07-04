@@ -29,8 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // Initialize database with default data
-  await initializeDatabase();
+
 
   // Health check endpoint
   app.get('/health', (req, res) => {
@@ -312,95 +311,38 @@ function parseLogFile(content: string, format: string, companyId: number) {
   const logs = [];
   const lines = content.split('\n').filter(line => line.trim());
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-
-    // Simple parsing logic - in real implementation, this would be more sophisticated
-    const log = insertZscalerLogSchema.parse({
-      timestamp: new Date(),
-      sourceIp: `192.168.1.${Math.floor(Math.random() * 255)}`,
-      destinationUrl: generateRandomUrl(),
-      action: getRandomAction(),
-      riskLevel: getRandomRiskLevel(),
-      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      bytesTransferred: Math.floor(Math.random() * 100000),
-      responseCode: getRandomResponseCode(),
-      category: getRandomCategory(),
-      companyId,
-    });
-
-    logs.push(log);
+  if (format === 'csv') {
+    // Skip header row if present
+    const dataLines = lines.slice(1);
+    
+    for (const line of dataLines) {
+      const fields = line.split(',').map(field => field.trim().replace(/"/g, ''));
+      
+      if (fields.length >= 6) {
+        try {
+          const log = insertZscalerLogSchema.parse({
+            timestamp: new Date(fields[0] || new Date().toISOString()),
+            sourceIp: fields[1] || '0.0.0.0',
+            destinationUrl: fields[2] || 'unknown',
+            action: fields[3] || 'UNKNOWN',
+            riskLevel: fields[4] || 'LOW',
+            userAgent: fields[5] || 'Unknown',
+            bytesTransferred: parseInt(fields[6]) || 0,
+            responseCode: parseInt(fields[7]) || 200,
+            category: fields[8] || 'Other',
+            companyId,
+          });
+          logs.push(log);
+        } catch (error) {
+          console.warn('Skipping invalid log entry:', fields);
+        }
+      }
+    }
   }
 
   return logs;
 }
 
-// Helper functions for generating sample data
-function generateRandomUrl(): string {
-  const domains = ['google.com', 'malicious-site.com', 'suspicious-domain.net', 'safe-website.org', 'phishing-attempt.biz'];
-  return domains[Math.floor(Math.random() * domains.length)];
-}
 
-function getRandomAction(): string {
-  const actions = ['ALLOWED', 'BLOCKED', 'FLAGGED'];
-  return actions[Math.floor(Math.random() * actions.length)];
-}
 
-function getRandomRiskLevel(): string {
-  const levels = ['LOW', 'MEDIUM', 'HIGH'];
-  return levels[Math.floor(Math.random() * levels.length)];
-}
 
-function getRandomResponseCode(): number {
-  const codes = [200, 301, 302, 403, 404, 500];
-  return codes[Math.floor(Math.random() * codes.length)];
-}
-
-function getRandomCategory(): string {
-  const categories = ['Business', 'Social Media', 'Malware', 'Phishing', 'Gaming'];
-  return categories[Math.floor(Math.random() * categories.length)];
-}
-
-// Initialize database with default data
-async function initializeDatabase() {
-  try {
-    // Create default company
-    const companies = await storage.getCompanies();
-    if (companies.length === 0) {
-      await storage.createCompany({ name: 'dev' });
-    }
-
-    // Create default log type
-    const logTypes = await storage.getLogTypes();
-    if (logTypes.length === 0) {
-      await storage.createLogType({
-        name: 'ZScaler Web Proxy Log',
-        tableName: 'zscaler_logs',
-      });
-    }
-
-    // Create 110 sample ZScaler logs
-    const logs = await storage.getZscalerLogs({ page: 1, limit: 1 });
-    if (logs.total === 0) {
-      const sampleLogs = [];
-      for (let i = 0; i < 110; i++) {
-        sampleLogs.push({
-          timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Random time in last 7 days
-          sourceIp: `192.168.1.${Math.floor(Math.random() * 255)}`,
-          destinationUrl: generateRandomUrl(),
-          action: getRandomAction(),
-          riskLevel: getRandomRiskLevel(),
-          userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-          bytesTransferred: Math.floor(Math.random() * 100000),
-          responseCode: getRandomResponseCode(),
-          category: getRandomCategory(),
-          companyId: 1, // Default company ID
-        });
-      }
-      await storage.createZscalerLogs(sampleLogs);
-    }
-  } catch (error) {
-    console.error("Error initializing database:", error);
-  }
-}
