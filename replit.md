@@ -167,6 +167,8 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Removed Sensitivity dropdown and always use medium/balanced sensitivity
   - Streamlined detection UI from 5 columns to 3 columns for cleaner interface
   - Removed unused summarizeLogs function and /api/logs/summarize endpoint to clean up codebase
+  - Removed "Generate AI Summary" button and AI summary display section from Summarize page
+  - Simplified Summarize page to focus on statistical analytics and top IPs table
 
 ## Changelog
 
