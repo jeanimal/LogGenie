@@ -30,8 +30,7 @@ import {
 export default function DetectAnomalies() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
-  const [analysisType, setAnalysisType] = useState("full");
-  const [sensitivity, setSensitivity] = useState("medium");
+
   const [timeRange, setTimeRange] = useState("7d");
   const [anomalies, setAnomalies] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
@@ -128,8 +127,8 @@ export default function DetectAnomalies() {
         generatedAt: new Date().toISOString(),
         reportType: "Cybersecurity Anomaly Detection Report",
         analysisConfiguration: {
-          analysisType,
-          sensitivity,
+          analysisType: "full",
+          sensitivity: "medium", 
           timeRange,
           aiConfiguration: {
             temperature,
@@ -286,8 +285,8 @@ export default function DetectAnomalies() {
 
   const handleRunDetection = () => {
     anomalyDetectionMutation.mutate({
-      analysisType,
-      sensitivity,
+      analysisType: "full", // Always use full analysis
+      sensitivity: "medium", // Always use medium/balanced sensitivity
       timeRange,
       temperature,
       maxTokens,
@@ -402,42 +401,7 @@ export default function DetectAnomalies() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Detection Configuration
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2">
-                    Analysis Type
-                  </Label>
-                  <Select value={analysisType} onValueChange={setAnalysisType}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="full">Full Analysis</SelectItem>
-                      <SelectItem value="behavior">
-                        Behavioral Anomalies
-                      </SelectItem>
-                      <SelectItem value="traffic">Traffic Patterns</SelectItem>
-                      <SelectItem value="access">Access Anomalies</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2">
-                    Sensitivity Level
-                  </Label>
-                  <Select value={sensitivity} onValueChange={setSensitivity}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="high">High (More Alerts)</SelectItem>
-                      <SelectItem value="medium">Medium (Balanced)</SelectItem>
-                      <SelectItem value="low">Low (Fewer Alerts)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2">
                     Time Range
