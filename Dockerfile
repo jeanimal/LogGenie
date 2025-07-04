@@ -28,4 +28,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Start the application in development mode using tsx (avoids build issues)
 ENV NODE_ENV=development
+# Set __dirname equivalent for import.meta.dirname compatibility
+ENV INIT_CWD=/app
+WORKDIR /app
 CMD ["npx", "tsx", "server/index.ts"]
