@@ -40,6 +40,17 @@ import {
   Calendar,
   Clock,
 } from "lucide-react";
+import {
+  LineChart as RechartsLineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart as RechartsBarChart,
+  Bar,
+} from "recharts";
 
 type LogEntry = {
   id: number;
@@ -66,6 +77,9 @@ export default function Summarize() {
   const timelineRange: [number, number] = [timelineStart, timelineEnd];
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
+
+  // Pattern view state
+  const [patternView, setPatternView] = useState<'hourly' | 'daily' | 'weekly'>('hourly');
 
   // Function to update URL with new filter values
   const updateFilters = (newFilters: Record<string, string | number>) => {
@@ -338,50 +352,37 @@ export default function Summarize() {
                 </Card>
               </div>
 
-              {/* Action Distribution and Top Sources */}
+              {/* Time-Based Views */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                {/* Action Distribution */}
+                {/* Log Trends Over Time */}
                 <Card>
                   <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Action Distribution</h3>
-                    <div className="space-y-4">
-                      {analytics.actionDistribution.map((action, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Badge
-                              className={
-                                action.action === 'ALLOW' ? 'bg-green-100 text-green-800' :
-                                action.action === 'BLOCK' ? 'bg-red-100 text-red-800' :
-                                'bg-yellow-100 text-yellow-800'
-                              }
-                            >
-                              {action.action}
-                            </Badge>
-                            <span className="text-sm text-gray-600">{action.count} events</span>
-                          </div>
-                          <span className="text-sm font-medium text-gray-900">{action.percentage}%</span>
-                        </div>
-                      ))}
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Log Trends Over Time</h3>
+                    <p className="text-sm text-gray-600 mb-4">Traffic volume changes over time to identify potential DDoS attacks or abnormal activity</p>
+                    <div className="h-64">
+                      <LogTrendsChart data={(analytics as any).timeTrends} />
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Top Source IPs */}
+                {/* Hourly/Daily/Weekly Patterns */}
                 <Card>
                   <CardContent className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Source IPs</h3>
-                    <div className="space-y-3">
-                      {analytics.topSourceIPs.slice(0, 5).map((ip, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div>
-                            <span className="font-medium text-gray-900">{ip.sourceIp}</span>
-                            <div className="text-sm text-gray-600">{ip.count} events</div>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            #{index + 1}
-                          </Badge>
-                        </div>
-                      ))}
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Traffic Patterns</h3>
+                      <select 
+                        className="text-sm border border-gray-300 rounded px-2 py-1"
+                        value={patternView}
+                        onChange={(e) => setPatternView(e.target.value as 'hourly' | 'daily' | 'weekly')}
+                      >
+                        <option value="hourly">Hourly</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                      </select>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">Traffic segmented by time periods to identify off-hours bot activity or credential stuffing</p>
+                    <div className="h-64">
+                      <TrafficPatternsChart data={(analytics as any).patterns[patternView]} />
                     </div>
                   </CardContent>
                 </Card>
@@ -449,6 +450,77 @@ export default function Summarize() {
   );
 }
 
+// Chart Components
+function LogTrendsChart({ data }: { data: Array<{ time: string; count: number }> }) {
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <RechartsLineChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+        <XAxis 
+          dataKey="time" 
+          stroke="#666"
+          fontSize={12}
+          tick={{ fontSize: 12 }}
+        />
+        <YAxis 
+          stroke="#666"
+          fontSize={12}
+          tick={{ fontSize: 12 }}
+        />
+        <Tooltip 
+          contentStyle={{ 
+            backgroundColor: 'white', 
+            border: '1px solid #ccc',
+            borderRadius: '8px',
+            fontSize: '12px'
+          }}
+          labelStyle={{ color: '#333' }}
+        />
+        <Line 
+          type="monotone" 
+          dataKey="count" 
+          stroke="#3b82f6" 
+          strokeWidth={2}
+          dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+          activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2, fill: 'white' }}
+        />
+      </RechartsLineChart>
+    </ResponsiveContainer>
+  );
+}
+
+function TrafficPatternsChart({ data }: { data: Array<{ period: string; count: number; blocked: number }> }) {
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <RechartsBarChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+        <XAxis 
+          dataKey="period" 
+          stroke="#666"
+          fontSize={12}
+          tick={{ fontSize: 12 }}
+        />
+        <YAxis 
+          stroke="#666"
+          fontSize={12}
+          tick={{ fontSize: 12 }}
+        />
+        <Tooltip 
+          contentStyle={{ 
+            backgroundColor: 'white', 
+            border: '1px solid #ccc',
+            borderRadius: '8px',
+            fontSize: '12px'
+          }}
+          labelStyle={{ color: '#333' }}
+        />
+        <Bar dataKey="count" fill="#3b82f6" name="Total Traffic" />
+        <Bar dataKey="blocked" fill="#ef4444" name="Blocked" />
+      </RechartsBarChart>
+    </ResponsiveContainer>
+  );
+}
+
 // Analytics calculation function
 function calculateAnalytics(logs: LogEntry[]) {
   const totalEvents = logs.length;
@@ -500,6 +572,12 @@ function calculateAnalytics(logs: LogEntry[]) {
   const minResponseTime = responseTimes.length > 0 ? Math.min(...responseTimes) : 0;
   const maxResponseTime = responseTimes.length > 0 ? Math.max(...responseTimes) : 0;
   
+  // Time-based analytics
+  const timeTrends = generateTimeTrends(logs);
+  const hourlyPatterns = generateHourlyPatterns(logs);
+  const dailyPatterns = generateDailyPatterns(logs);
+  const weeklyPatterns = generateWeeklyPatterns(logs);
+  
   return {
     totalEvents,
     blockedRequests,
@@ -514,5 +592,92 @@ function calculateAnalytics(logs: LogEntry[]) {
     avgResponseTime,
     minResponseTime,
     maxResponseTime,
+    timeTrends,
+    patterns: {
+      hourly: hourlyPatterns,
+      daily: dailyPatterns,
+      weekly: weeklyPatterns,
+    },
   };
+}
+
+// Time trends generation (shows traffic over time)
+function generateTimeTrends(logs: LogEntry[]) {
+  if (logs.length === 0) return [];
+  
+  // Group logs by hour
+  const hourlyData = logs.reduce((acc, log) => {
+    const hour = new Date(log.timestamp).toISOString().slice(0, 13) + ':00:00Z';
+    const hourKey = new Date(hour).toLocaleString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      hour: 'numeric' 
+    });
+    acc[hourKey] = (acc[hourKey] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  return Object.entries(hourlyData)
+    .map(([time, count]) => ({ time, count }))
+    .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+    .slice(-24); // Show last 24 hours
+}
+
+// Hourly patterns (0-23 hours)
+function generateHourlyPatterns(logs: LogEntry[]) {
+  const hourlyData = new Array(24).fill(0).map((_, hour) => ({
+    period: `${hour.toString().padStart(2, '0')}:00`,
+    count: 0,
+    blocked: 0,
+  }));
+  
+  logs.forEach(log => {
+    const hour = new Date(log.timestamp).getHours();
+    hourlyData[hour].count++;
+    if (log.action === 'BLOCK') {
+      hourlyData[hour].blocked++;
+    }
+  });
+  
+  return hourlyData;
+}
+
+// Daily patterns (days of week)
+function generateDailyPatterns(logs: LogEntry[]) {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dailyData = days.map(day => ({ period: day, count: 0, blocked: 0 }));
+  
+  logs.forEach(log => {
+    const dayIndex = new Date(log.timestamp).getDay();
+    dailyData[dayIndex].count++;
+    if (log.action === 'BLOCK') {
+      dailyData[dayIndex].blocked++;
+    }
+  });
+  
+  return dailyData;
+}
+
+// Weekly patterns (weeks over time)
+function generateWeeklyPatterns(logs: LogEntry[]) {
+  if (logs.length === 0) return [];
+  
+  const weeklyData = logs.reduce((acc, log) => {
+    const date = new Date(log.timestamp);
+    const weekStart = new Date(date.setDate(date.getDate() - date.getDay()));
+    const weekKey = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    
+    if (!acc[weekKey]) {
+      acc[weekKey] = { period: weekKey, count: 0, blocked: 0 };
+    }
+    acc[weekKey].count++;
+    if (log.action === 'BLOCK') {
+      acc[weekKey].blocked++;
+    }
+    return acc;
+  }, {} as Record<string, { period: string; count: number; blocked: number }>);
+  
+  return Object.values(weeklyData).sort((a, b) => 
+    new Date(a.period).getTime() - new Date(b.period).getTime()
+  );
 }
