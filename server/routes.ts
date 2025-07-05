@@ -36,26 +36,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  // Dashboard route - serves React app for authenticated users
-  app.get('/dashboard', isAuthenticated, (req, res) => {
-    // In development, redirect to the dev server  
-    if (process.env.NODE_ENV === 'development') {
-      res.redirect('/');
-      return;
-    }
-    // In production, serve the production HTML file
-    res.sendFile('index-production.html', { root: './client' });
-  });
-
-  // Handle all other routes for authenticated users (SPA routing)
-  app.get(['/upload', '/view-logs', '/summarize', '/detect-anomalies', '/admin'], isAuthenticated, (req, res) => {
-    if (process.env.NODE_ENV === 'development') {
-      res.redirect('/');
-      return;
-    }
-    res.sendFile('index-production.html', { root: './client' });
-  });
-
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
