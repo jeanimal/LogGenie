@@ -184,6 +184,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Added global search across all log fields and individual column filters
   - Each column header now supports click-to-sort with visual indicators (arrows)
   - Added comprehensive filtering system with search inputs for each column
+  - Fixed TanStack Query to properly fetch all logs (1000 limit) instead of default pagination (20)
+  - Resolved URL parameter construction issue where queryKey wasn't being converted to proper API parameters
+  - Enhanced table performance by loading complete dataset for client-side filtering and sorting
 
 ## Changelog
 
