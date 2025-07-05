@@ -488,6 +488,119 @@ export default function Summarize() {
                 </Card>
               </div>
 
+              {/* IP Address Security Analytics */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                {/* Geolocation Traffic Analysis */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Geolocation Analysis</h3>
+                    <p className="text-sm text-gray-600 mb-4">Traffic from unusual geographic locations indicating potential unauthorized access</p>
+                    <div className="space-y-3">
+                      {(analytics as any).ipSecurityAnalytics.geolocationAnomalies.slice(0, 5).map((location: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                          <div>
+                            <span className="font-medium text-gray-900">{location.country}</span>
+                            <div className="text-sm text-gray-600">{location.requestCount} requests</div>
+                            <div className="text-xs text-blue-600">{location.uniqueIPs} unique IPs</div>
+                          </div>
+                          <div className="text-right">
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                location.riskScore > 7 ? "border-red-500 text-red-700" :
+                                location.riskScore > 4 ? "border-yellow-500 text-yellow-700" :
+                                "border-blue-500 text-blue-700"
+                              }
+                            >
+                              Risk: {location.riskScore}/10
+                            </Badge>
+                            <div className="text-xs text-gray-500 mt-1">{location.timePattern}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {(analytics as any).ipSecurityAnalytics.geolocationAnomalies.length === 0 && (
+                        <div className="text-center py-4 text-gray-500">
+                          <Network className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                          <p className="text-sm">No geolocation anomalies detected</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Suspicious IPs */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Suspicious IPs</h3>
+                    <p className="text-sm text-gray-600 mb-4">IP addresses with high blocked request rates or restricted resource access</p>
+                    <div className="space-y-3">
+                      {(analytics as any).ipSecurityAnalytics.suspiciousIPs.slice(0, 5).map((ip: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
+                          <div>
+                            <span className="font-medium text-gray-900">{ip.sourceIp}</span>
+                            <div className="text-sm text-gray-600">
+                              {ip.totalRequests} requests • {ip.blockedPercentage}% blocked
+                            </div>
+                            <div className="text-xs text-red-600">{ip.restrictedAttempts} restricted access attempts</div>
+                          </div>
+                          <Badge 
+                            variant="destructive" 
+                            className={
+                              ip.threatLevel === 'Critical' ? "bg-red-600" :
+                              ip.threatLevel === 'High' ? "bg-red-500" : "bg-red-400"
+                            }
+                          >
+                            {ip.threatLevel}
+                          </Badge>
+                        </div>
+                      ))}
+                      {(analytics as any).ipSecurityAnalytics.suspiciousIPs.length === 0 && (
+                        <div className="text-center py-4 text-gray-500">
+                          <Shield className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                          <p className="text-sm">No suspicious IP activity detected</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* High-Frequency Request Analysis */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">High-Frequency Requests</h3>
+                    <p className="text-sm text-gray-600 mb-4">IPs with excessive request rates indicating botnet or scraping activity</p>
+                    <div className="space-y-3">
+                      {(analytics as any).ipSecurityAnalytics.highFrequencyIPs.slice(0, 5).map((ip: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100">
+                          <div>
+                            <span className="font-medium text-gray-900">{ip.sourceIp}</span>
+                            <div className="text-sm text-gray-600">
+                              {ip.requestsPerMinute} req/min • {ip.totalRequests} total
+                            </div>
+                            <div className="text-xs text-orange-600">{ip.timeSpan} activity window</div>
+                          </div>
+                          <div className="text-right">
+                            <Badge 
+                              variant="outline" 
+                              className="border-orange-500 text-orange-700"
+                            >
+                              {ip.botProbability}% bot
+                            </Badge>
+                            <div className="text-xs text-gray-500 mt-1">{ip.pattern}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {(analytics as any).ipSecurityAnalytics.highFrequencyIPs.length === 0 && (
+                        <div className="text-center py-4 text-gray-500">
+                          <BarChart3 className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                          <p className="text-sm">No high-frequency activity detected</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
               {/* Categories and Response Times */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 {/* Top Categories */}
@@ -681,6 +794,9 @@ function calculateAnalytics(logs: LogEntry[]) {
   // User security analytics
   const userSecurityAnalytics = generateUserSecurityAnalytics(logs);
   
+  // IP security analytics
+  const ipSecurityAnalytics = generateIPSecurityAnalytics(logs);
+  
   return {
     totalEvents,
     blockedRequests,
@@ -702,6 +818,7 @@ function calculateAnalytics(logs: LogEntry[]) {
       weekly: weeklyPatterns,
     },
     userSecurityAnalytics,
+    ipSecurityAnalytics,
   };
 }
 
@@ -903,5 +1020,175 @@ function generateUserSecurityAnalytics(logs: LogEntry[]) {
     failedLogins: failedLogins.slice(0, 10),
     suspiciousActivity: suspiciousActivity.slice(0, 10),
     abnormalAccess: abnormalAccess.slice(0, 10),
+  };
+}
+
+function generateIPSecurityAnalytics(logs: LogEntry[]) {
+  // Geolocation analysis - simulate country detection based on IP patterns
+  const ipsByCountry = new Map<string, { ips: Set<string>, requests: number, timestamps: Date[] }>();
+  
+  logs.forEach(log => {
+    const ip = log.sourceIp;
+    // Simple geolocation simulation based on IP patterns
+    let country = 'Unknown';
+    if (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')) {
+      country = 'Internal Network';
+    } else if (ip.startsWith('203.')) {
+      country = 'Australia';
+    } else if (ip.startsWith('185.')) {
+      country = 'Russia';
+    } else if (ip.startsWith('198.')) {
+      country = 'USA';
+    } else if (ip.startsWith('41.')) {
+      country = 'Nigeria';
+    } else if (ip.startsWith('58.')) {
+      country = 'China';
+    } else if (ip.startsWith('80.')) {
+      country = 'Germany';
+    } else {
+      country = 'Other';
+    }
+    
+    if (!ipsByCountry.has(country)) {
+      ipsByCountry.set(country, { ips: new Set(), requests: 0, timestamps: [] });
+    }
+    
+    const countryData = ipsByCountry.get(country)!;
+    countryData.ips.add(ip);
+    countryData.requests++;
+    countryData.timestamps.push(new Date(log.timestamp));
+  });
+  
+  const geolocationAnomalies = Array.from(ipsByCountry.entries())
+    .filter(([country]) => country !== 'Internal Network' && country !== 'USA')
+    .map(([country, data]) => {
+      const hours = data.timestamps.map(t => t.getHours());
+      const uniqueHours = new Set(hours);
+      const isAfterHours = hours.some(h => h < 6 || h > 22);
+      
+      let riskScore = 3; // Base score for external traffic
+      if (country === 'Russia' || country === 'China' || country === 'Nigeria') riskScore += 4;
+      if (data.requests > 10) riskScore += 2;
+      if (isAfterHours) riskScore += 1;
+      if (data.ips.size > 3) riskScore += 1;
+      
+      return {
+        country,
+        requestCount: data.requests,
+        uniqueIPs: data.ips.size,
+        riskScore: Math.min(10, riskScore),
+        timePattern: isAfterHours ? 'After-hours activity' : 'Business hours',
+      };
+    })
+    .sort((a, b) => b.riskScore - a.riskScore);
+  
+  // Suspicious IP analysis
+  const ipStats = new Map<string, { 
+    requests: number, 
+    blocked: number, 
+    restrictedAttempts: number,
+    categories: Set<string> 
+  }>();
+  
+  logs.forEach(log => {
+    if (!ipStats.has(log.sourceIp)) {
+      ipStats.set(log.sourceIp, { 
+        requests: 0, 
+        blocked: 0, 
+        restrictedAttempts: 0,
+        categories: new Set() 
+      });
+    }
+    
+    const stats = ipStats.get(log.sourceIp)!;
+    stats.requests++;
+    if (log.action === 'BLOCK') stats.blocked++;
+    if (log.category) stats.categories.add(log.category);
+    
+    // Count restricted access attempts
+    if (log.destinationUrl.includes('/admin') || 
+        log.destinationUrl.includes('/api/admin') ||
+        log.destinationUrl.includes('/config') ||
+        log.destinationUrl.includes('/backup')) {
+      stats.restrictedAttempts++;
+    }
+  });
+  
+  const suspiciousIPs = Array.from(ipStats.entries())
+    .map(([ip, stats]) => {
+      const blockedPercentage = Math.round((stats.blocked / stats.requests) * 100);
+      
+      let threatLevel = 'Low';
+      if (blockedPercentage > 50 || stats.restrictedAttempts > 3) threatLevel = 'Critical';
+      else if (blockedPercentage > 30 || stats.restrictedAttempts > 1) threatLevel = 'High';
+      else if (blockedPercentage > 10) threatLevel = 'Medium';
+      
+      return {
+        sourceIp: ip,
+        totalRequests: stats.requests,
+        blockedPercentage,
+        restrictedAttempts: stats.restrictedAttempts,
+        threatLevel,
+      };
+    })
+    .filter(ip => ip.blockedPercentage > 20 || ip.restrictedAttempts > 0)
+    .sort((a, b) => {
+      const threatOrder = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
+      return threatOrder[b.threatLevel as keyof typeof threatOrder] - threatOrder[a.threatLevel as keyof typeof threatOrder];
+    });
+  
+  // High-frequency request analysis
+  const ipRequestTimes = new Map<string, Date[]>();
+  
+  logs.forEach(log => {
+    if (!ipRequestTimes.has(log.sourceIp)) {
+      ipRequestTimes.set(log.sourceIp, []);
+    }
+    ipRequestTimes.get(log.sourceIp)!.push(new Date(log.timestamp));
+  });
+  
+  const highFrequencyIPs = Array.from(ipRequestTimes.entries())
+    .map(([ip, timestamps]) => {
+      if (timestamps.length < 5) return null;
+      
+      timestamps.sort((a, b) => a.getTime() - b.getTime());
+      const firstRequest = timestamps[0];
+      const lastRequest = timestamps[timestamps.length - 1];
+      const timeSpanMinutes = (lastRequest.getTime() - firstRequest.getTime()) / (1000 * 60);
+      
+      if (timeSpanMinutes === 0) return null;
+      
+      const requestsPerMinute = Math.round((timestamps.length / timeSpanMinutes) * 10) / 10;
+      
+      // Analyze request patterns
+      const intervals = timestamps.slice(1).map((time, i) => 
+        time.getTime() - timestamps[i].getTime()
+      );
+      const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+      const isRegular = intervals.every(interval => Math.abs(interval - avgInterval) < avgInterval * 0.3);
+      
+      let botProbability = 0;
+      if (requestsPerMinute > 2) botProbability += 30;
+      if (requestsPerMinute > 5) botProbability += 40;
+      if (isRegular) botProbability += 30;
+      
+      return {
+        sourceIp: ip,
+        requestsPerMinute,
+        totalRequests: timestamps.length,
+        timeSpan: timeSpanMinutes > 60 ? 
+          `${Math.round(timeSpanMinutes / 60)}h` : 
+          `${Math.round(timeSpanMinutes)}m`,
+        botProbability: Math.min(100, botProbability),
+        pattern: isRegular ? 'Regular intervals' : 'Irregular timing',
+      };
+    })
+    .filter(ip => ip !== null && ip.requestsPerMinute > 1)
+    .sort((a, b) => b!.requestsPerMinute - a!.requestsPerMinute);
+  
+  return {
+    geolocationAnomalies,
+    suspiciousIPs,
+    highFrequencyIPs,
   };
 }
