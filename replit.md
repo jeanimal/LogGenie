@@ -191,6 +191,10 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Implemented time-based analytics charts showing log trends over time and traffic patterns (hourly/daily/weekly)
   - Created user-focused security analytics detecting failed login attempts, suspicious behavior, and abnormal resource access
   - Added real-time risk scoring and threat level assessment for cybersecurity threat detection
+  - Completed comprehensive URL security analytics with blocked URL analysis, frequent access patterns, and rare/first-time domain detection
+  - Implemented domain-based threat categorization (Malware/Phishing/Suspicious/Policy Violation) with visual risk indicators
+  - Added anomaly scoring for URL access patterns detecting data exfiltration and reconnaissance activities
+  - Created rare URL detection identifying infrequent domain access, temporary domains, file sharing platforms, and after-hours access patterns
 
 ## Changelog
 
