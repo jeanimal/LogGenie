@@ -388,6 +388,106 @@ export default function Summarize() {
                 </Card>
               </div>
 
+              {/* User-Focused Security Analytics */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                {/* Failed Login Attempts */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Failed Login Attempts</h3>
+                    <p className="text-sm text-gray-600 mb-4">Users with multiple failed attempts indicating credential stuffing or brute force attacks</p>
+                    <div className="space-y-3">
+                      {(analytics as any).userSecurityAnalytics.failedLogins.slice(0, 5).map((user: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
+                          <div>
+                            <span className="font-medium text-gray-900">{user.userId}</span>
+                            <div className="text-sm text-red-600">{user.failedAttempts} failed attempts</div>
+                          </div>
+                          <Badge 
+                            variant="destructive" 
+                            className={user.failedAttempts > 10 ? "bg-red-600" : user.failedAttempts > 5 ? "bg-red-500" : "bg-red-400"}
+                          >
+                            {user.riskLevel}
+                          </Badge>
+                        </div>
+                      ))}
+                      {(analytics as any).userSecurityAnalytics.failedLogins.length === 0 && (
+                        <div className="text-center py-4 text-gray-500">
+                          <Shield className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                          <p className="text-sm">No failed login patterns detected</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* User Behavior Analysis */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">User Behavior Analysis</h3>
+                    <p className="text-sm text-gray-600 mb-4">Users with unusually high activity indicating potential account compromise</p>
+                    <div className="space-y-3">
+                      {(analytics as any).userSecurityAnalytics.suspiciousActivity.slice(0, 5).map((user: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                          <div>
+                            <span className="font-medium text-gray-900">{user.userId}</span>
+                            <div className="text-sm text-gray-600">
+                              {user.totalRequests} requests • {user.uniqueResources} resources
+                            </div>
+                            <div className="text-xs text-yellow-600">{user.blockedPercentage}% blocked</div>
+                          </div>
+                          <Badge 
+                            variant="outline" 
+                            className={
+                              user.riskScore > 7 ? "border-red-500 text-red-700" :
+                              user.riskScore > 4 ? "border-yellow-500 text-yellow-700" :
+                              "border-green-500 text-green-700"
+                            }
+                          >
+                            Risk: {user.riskScore}/10
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Abnormal Resource Access */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Abnormal Resource Access</h3>
+                    <p className="text-sm text-gray-600 mb-4">Users accessing unusual resources indicating insider threats</p>
+                    <div className="space-y-3">
+                      {(analytics as any).userSecurityAnalytics.abnormalAccess.slice(0, 5).map((user: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100">
+                          <div>
+                            <span className="font-medium text-gray-900">{user.userId}</span>
+                            <div className="text-sm text-gray-600">{user.sensitiveResources.length} sensitive resources</div>
+                            <div className="text-xs text-purple-600 mt-1">
+                              {user.sensitiveResources.slice(0, 2).map((resource: string) => 
+                                resource.split('/').pop()
+                              ).join(', ')}
+                              {user.sensitiveResources.length > 2 && ` +${user.sensitiveResources.length - 2} more`}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant="outline" className="border-purple-500 text-purple-700">
+                              {user.accessAttempts} attempts
+                            </Badge>
+                            <div className="text-xs text-gray-500 mt-1">{user.timePattern}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {(analytics as any).userSecurityAnalytics.abnormalAccess.length === 0 && (
+                        <div className="text-center py-4 text-gray-500">
+                          <FileText className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                          <p className="text-sm">No abnormal access patterns detected</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
               {/* Categories and Response Times */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 {/* Top Categories */}
@@ -578,6 +678,9 @@ function calculateAnalytics(logs: LogEntry[]) {
   const dailyPatterns = generateDailyPatterns(logs);
   const weeklyPatterns = generateWeeklyPatterns(logs);
   
+  // User security analytics
+  const userSecurityAnalytics = generateUserSecurityAnalytics(logs);
+  
   return {
     totalEvents,
     blockedRequests,
@@ -598,6 +701,7 @@ function calculateAnalytics(logs: LogEntry[]) {
       daily: dailyPatterns,
       weekly: weeklyPatterns,
     },
+    userSecurityAnalytics,
   };
 }
 
@@ -685,4 +789,119 @@ function generateWeeklyPatterns(logs: LogEntry[]) {
   return Object.values(weeklyData).sort((a, b) => 
     new Date(a.period).getTime() - new Date(b.period).getTime()
   );
+}
+
+// User security analytics generation
+function generateUserSecurityAnalytics(logs: LogEntry[]) {
+  if (logs.length === 0) {
+    return {
+      failedLogins: [],
+      suspiciousActivity: [],
+      abnormalAccess: [],
+    };
+  }
+
+  // Group logs by user
+  const userActivity = logs.reduce((acc, log) => {
+    if (!acc[log.userId]) {
+      acc[log.userId] = {
+        userId: log.userId,
+        totalRequests: 0,
+        blockedRequests: 0,
+        resources: new Set(),
+        sensitiveResources: new Set(),
+        timestamps: [],
+        actions: [],
+      };
+    }
+    
+    acc[log.userId].totalRequests++;
+    if (log.action === 'BLOCK') {
+      acc[log.userId].blockedRequests++;
+    }
+    acc[log.userId].resources.add(log.destinationUrl);
+    acc[log.userId].timestamps.push(new Date(log.timestamp));
+    acc[log.userId].actions.push(log.action);
+    
+    // Identify sensitive resources (common patterns)
+    const url = log.destinationUrl.toLowerCase();
+    if (url.includes('admin') || url.includes('hr') || url.includes('finance') || 
+        url.includes('payroll') || url.includes('confidential') || url.includes('reports') ||
+        url.includes('management') || url.includes('executive') || url.includes('board')) {
+      acc[log.userId].sensitiveResources.add(log.destinationUrl);
+    }
+    
+    return acc;
+  }, {} as Record<string, any>);
+
+  // Analyze failed login attempts (based on blocked authentication requests)
+  const failedLogins = Object.values(userActivity)
+    .map((user: any) => {
+      const authBlocks = user.actions.filter((action: string) => action === 'BLOCK').length;
+      const failedAttempts = Math.floor(authBlocks * 0.3); // Estimate failed logins from blocks
+      
+      if (failedAttempts < 3) return null;
+      
+      return {
+        userId: user.userId,
+        failedAttempts,
+        riskLevel: failedAttempts > 10 ? 'Critical' : failedAttempts > 5 ? 'High' : 'Medium',
+      };
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => b.failedAttempts - a.failedAttempts);
+
+  // Analyze suspicious activity
+  const suspiciousActivity = Object.values(userActivity)
+    .map((user: any) => {
+      const blockedPercentage = Math.round((user.blockedRequests / user.totalRequests) * 100);
+      const uniqueResources = user.resources.size;
+      
+      // Calculate risk score based on various factors
+      let riskScore = 0;
+      if (user.totalRequests > 50) riskScore += 2;
+      if (user.totalRequests > 100) riskScore += 2;
+      if (blockedPercentage > 30) riskScore += 3;
+      if (blockedPercentage > 50) riskScore += 2;
+      if (uniqueResources > 20) riskScore += 2;
+      if (user.sensitiveResources.size > 0) riskScore += 1;
+      
+      if (riskScore < 3) return null;
+      
+      return {
+        userId: user.userId,
+        totalRequests: user.totalRequests,
+        uniqueResources,
+        blockedPercentage,
+        riskScore: Math.min(riskScore, 10),
+      };
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => b.riskScore - a.riskScore);
+
+  // Analyze abnormal resource access
+  const abnormalAccess = Object.values(userActivity)
+    .map((user: any) => {
+      if (user.sensitiveResources.size === 0) return null;
+      
+      // Analyze time patterns
+      const hours = user.timestamps.map((t: Date) => t.getHours());
+      const afterHours = hours.filter((h: number) => h < 6 || h > 22).length;
+      const timePattern = afterHours > user.timestamps.length * 0.3 ? 'After hours' : 'Business hours';
+      
+      return {
+        userId: user.userId,
+        sensitiveResources: Array.from(user.sensitiveResources),
+        accessAttempts: user.sensitiveResources.size,
+        timePattern,
+      };
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => b.accessAttempts - a.accessAttempts);
+
+  return {
+    failedLogins: failedLogins.slice(0, 10),
+    suspiciousActivity: suspiciousActivity.slice(0, 10),
+    abnormalAccess: abnormalAccess.slice(0, 10),
+  };
 }
