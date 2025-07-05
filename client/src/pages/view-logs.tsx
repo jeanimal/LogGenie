@@ -132,12 +132,12 @@ export default function ViewLogs() {
 
   const getActionBadge = (action: string) => {
     switch (action) {
-      case "BLOCKED":
-        return <Badge variant="destructive">BLOCKED</Badge>;
-      case "ALLOWED":
-        return <Badge variant="default" className="bg-green-100 text-green-800">ALLOWED</Badge>;
+      case "BLOCK":
+        return <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200">BLOCK</Badge>;
+      case "ALLOW":
+        return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">ALLOW</Badge>;
       case "FLAGGED":
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">FLAGGED</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">FLAGGED</Badge>;
       default:
         return <Badge variant="outline">{action}</Badge>;
     }
