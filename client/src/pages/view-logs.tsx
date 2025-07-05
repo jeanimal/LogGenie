@@ -301,7 +301,6 @@ export default function ViewLogs() {
                           <TableHead>Action</TableHead>
                           <TableHead>Category</TableHead>
                           <TableHead>Response Time</TableHead>
-                          <TableHead>Details</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -327,11 +326,6 @@ export default function ViewLogs() {
                             </TableCell>
                             <TableCell className="text-sm text-gray-900">
                               {log.responseTime ? `${log.responseTime}ms` : 'N/A'}
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="link" className="text-primary hover:text-blue-700 p-0">
-                                View Details
-                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
