@@ -88,6 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
       const companyId = req.query.companyId ? parseInt(req.query.companyId as string) : undefined;
+      const action = req.query.action as string || undefined;
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
 
@@ -95,6 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         page,
         limit,
         companyId,
+        action,
         startDate,
         endDate,
       });

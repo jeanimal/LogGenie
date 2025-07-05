@@ -38,6 +38,7 @@ export interface IStorage {
     page: number;
     limit: number;
     companyId?: number;
+    action?: string;
     startDate?: Date;
     endDate?: Date;
   }): Promise<{ logs: ZscalerLog[]; total: number }>;
@@ -127,15 +128,19 @@ export class DatabaseStorage implements IStorage {
     page: number;
     limit: number;
     companyId?: number;
+    action?: string;
     startDate?: Date;
     endDate?: Date;
   }): Promise<{ logs: ZscalerLog[]; total: number }> {
-    const { page, limit, companyId, startDate, endDate } = options;
+    const { page, limit, companyId, action, startDate, endDate } = options;
     const offset = (page - 1) * limit;
 
     let whereConditions = [];
     if (companyId) {
       whereConditions.push(eq(zscalerLogs.companyId, companyId));
+    }
+    if (action) {
+      whereConditions.push(eq(zscalerLogs.action, action));
     }
     if (startDate) {
       whereConditions.push(gte(zscalerLogs.timestamp, startDate));
