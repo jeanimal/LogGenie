@@ -605,22 +605,27 @@ function calculateAnalytics(logs: LogEntry[]) {
 function generateTimeTrends(logs: LogEntry[]) {
   if (logs.length === 0) return [];
   
-  // Group logs by hour
+  // Group logs by hour and keep track of actual timestamps for proper sorting
   const hourlyData = logs.reduce((acc, log) => {
-    const hour = new Date(log.timestamp).toISOString().slice(0, 13) + ':00:00Z';
-    const hourKey = new Date(hour).toLocaleString('en-US', { 
+    const logDate = new Date(log.timestamp);
+    const hour = new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate(), logDate.getHours());
+    const hourKey = hour.toISOString();
+    const displayTime = hour.toLocaleString('en-US', { 
       month: 'short', 
       day: 'numeric', 
       hour: 'numeric' 
     });
-    acc[hourKey] = (acc[hourKey] || 0) + 1;
+    
+    if (!acc[hourKey]) {
+      acc[hourKey] = { time: displayTime, count: 0, sortKey: hour.getTime() };
+    }
+    acc[hourKey].count++;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, { time: string; count: number; sortKey: number }>);
   
-  return Object.entries(hourlyData)
-    .map(([time, count]) => ({ time, count }))
-    .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
-    .slice(-24); // Show last 24 hours
+  return Object.values(hourlyData)
+    .sort((a, b) => a.sortKey - b.sortKey) // Sort by actual timestamp, earliest first
+    .map(({ time, count }) => ({ time, count }));
 }
 
 // Hourly patterns (0-23 hours)
