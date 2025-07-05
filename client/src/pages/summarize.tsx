@@ -601,6 +601,87 @@ export default function Summarize() {
                 </Card>
               </div>
 
+              {/* URL Security Analytics */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                {/* Blocked URLs Analysis */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Blocked URLs</h3>
+                    <p className="text-sm text-gray-600 mb-4">URLs blocked for phishing, malware, or policy violations</p>
+                    <div className="space-y-3">
+                      {(analytics as any).urlSecurityAnalytics.blockedUrls.slice(0, 5).map((url: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium text-gray-900 truncate block">{url.domain}</span>
+                            <div className="text-sm text-gray-600">{url.blockCount} blocked attempts</div>
+                            <div className="text-xs text-red-600">{url.uniqueUsers} users affected</div>
+                          </div>
+                          <div className="text-right ml-4">
+                            <Badge 
+                              variant="destructive" 
+                              className={
+                                url.threatCategory === 'Malware' ? "bg-red-600" :
+                                url.threatCategory === 'Phishing' ? "bg-red-500" : 
+                                url.threatCategory === 'Suspicious' ? "bg-orange-500" : "bg-red-400"
+                              }
+                            >
+                              {url.threatCategory}
+                            </Badge>
+                            <div className="text-xs text-gray-500 mt-1">{url.riskLevel}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {(analytics as any).urlSecurityAnalytics.blockedUrls.length === 0 && (
+                        <div className="text-center py-4 text-gray-500">
+                          <Shield className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                          <p className="text-sm">No blocked URLs detected</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Frequent URL Access Analysis */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Frequent URL Access</h3>
+                    <p className="text-sm text-gray-600 mb-4">Most accessed URLs revealing traffic patterns and potential anomalies</p>
+                    <div className="space-y-3">
+                      {(analytics as any).urlSecurityAnalytics.frequentUrls.slice(0, 5).map((url: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium text-gray-900 truncate block">{url.domain}</span>
+                            <div className="text-sm text-gray-600">{url.totalAccess} total requests</div>
+                            <div className="text-xs text-blue-600">{url.uniqueUsers} unique users</div>
+                          </div>
+                          <div className="text-right ml-4">
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                url.anomalyScore > 7 ? "border-red-500 text-red-700" :
+                                url.anomalyScore > 4 ? "border-yellow-500 text-yellow-700" :
+                                "border-green-500 text-green-700"
+                              }
+                            >
+                              {url.category}
+                            </Badge>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {url.anomalyScore > 5 ? "Unusual pattern" : "Normal traffic"}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {(analytics as any).urlSecurityAnalytics.frequentUrls.length === 0 && (
+                        <div className="text-center py-4 text-gray-500">
+                          <BarChart3 className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                          <p className="text-sm">No frequent access patterns detected</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
               {/* Categories and Response Times */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 {/* Top Categories */}
@@ -797,6 +878,9 @@ function calculateAnalytics(logs: LogEntry[]) {
   // IP security analytics
   const ipSecurityAnalytics = generateIPSecurityAnalytics(logs);
   
+  // URL security analytics
+  const urlSecurityAnalytics = generateURLSecurityAnalytics(logs);
+  
   return {
     totalEvents,
     blockedRequests,
@@ -819,6 +903,7 @@ function calculateAnalytics(logs: LogEntry[]) {
     },
     userSecurityAnalytics,
     ipSecurityAnalytics,
+    urlSecurityAnalytics,
   };
 }
 
@@ -1190,5 +1275,154 @@ function generateIPSecurityAnalytics(logs: LogEntry[]) {
     geolocationAnomalies,
     suspiciousIPs,
     highFrequencyIPs,
+  };
+}
+
+function generateURLSecurityAnalytics(logs: LogEntry[]) {
+  // Analyze blocked URLs
+  const blockedUrlStats = new Map<string, {
+    domain: string;
+    blockCount: number;
+    uniqueUsers: Set<string>;
+    threatCategory: string;
+    riskLevel: string;
+  }>();
+  
+  logs.forEach(log => {
+    if (log.action === 'BLOCK') {
+      try {
+        const url = new URL(log.destinationUrl);
+        const domain = url.hostname;
+        
+        if (!blockedUrlStats.has(domain)) {
+          // Determine threat category based on domain patterns
+          let threatCategory = 'Policy Violation';
+          let riskLevel = 'Medium';
+          
+          if (domain.includes('phish') || domain.includes('scam') || domain.includes('fake')) {
+            threatCategory = 'Phishing';
+            riskLevel = 'High';
+          } else if (domain.includes('malware') || domain.includes('virus') || domain.includes('trojan')) {
+            threatCategory = 'Malware';
+            riskLevel = 'Critical';
+          } else if (domain.includes('suspicious') || domain.includes('proxy') || domain.includes('anon')) {
+            threatCategory = 'Suspicious';
+            riskLevel = 'Medium';
+          } else if (domain.includes('ad') || domain.includes('spam')) {
+            threatCategory = 'Advertisement';
+            riskLevel = 'Low';
+          }
+          
+          blockedUrlStats.set(domain, {
+            domain,
+            blockCount: 0,
+            uniqueUsers: new Set(),
+            threatCategory,
+            riskLevel,
+          });
+        }
+        
+        const stats = blockedUrlStats.get(domain)!;
+        stats.blockCount++;
+        stats.uniqueUsers.add(log.userId);
+      } catch (e) {
+        // Skip invalid URLs
+      }
+    }
+  });
+  
+  const blockedUrls = Array.from(blockedUrlStats.values())
+    .map(stats => ({
+      ...stats,
+      uniqueUsers: stats.uniqueUsers.size,
+    }))
+    .sort((a, b) => b.blockCount - a.blockCount);
+  
+  // Analyze frequent URL access patterns
+  const urlAccessStats = new Map<string, {
+    domain: string;
+    totalAccess: number;
+    uniqueUsers: Set<string>;
+    category: string;
+    anomalyScore: number;
+  }>();
+  
+  logs.forEach(log => {
+    try {
+      const url = new URL(log.destinationUrl);
+      const domain = url.hostname;
+      
+      if (!urlAccessStats.has(domain)) {
+        // Categorize domains
+        let category = 'Business';
+        if (domain.includes('social') || domain.includes('facebook') || domain.includes('twitter')) {
+          category = 'Social Media';
+        } else if (domain.includes('news') || domain.includes('media')) {
+          category = 'News/Media';
+        } else if (domain.includes('shop') || domain.includes('store') || domain.includes('buy')) {
+          category = 'E-commerce';
+        } else if (domain.includes('cloud') || domain.includes('api') || domain.includes('service')) {
+          category = 'Cloud Service';
+        } else if (domain.includes('entertainment') || domain.includes('game') || domain.includes('video')) {
+          category = 'Entertainment';
+        }
+        
+        urlAccessStats.set(domain, {
+          domain,
+          totalAccess: 0,
+          uniqueUsers: new Set(),
+          category,
+          anomalyScore: 0,
+        });
+      }
+      
+      const stats = urlAccessStats.get(domain)!;
+      stats.totalAccess++;
+      stats.uniqueUsers.add(log.userId);
+    } catch (e) {
+      // Skip invalid URLs
+    }
+  });
+  
+  // Calculate anomaly scores for frequent URLs
+  const allDomains = Array.from(urlAccessStats.values());
+  const avgAccess = allDomains.reduce((sum, domain) => sum + domain.totalAccess, 0) / allDomains.length;
+  const avgUsers = allDomains.reduce((sum, domain) => sum + domain.uniqueUsers.size, 0) / allDomains.length;
+  
+  allDomains.forEach(domain => {
+    let anomalyScore = 0;
+    
+    // High access volume anomaly
+    if (domain.totalAccess > avgAccess * 3) anomalyScore += 3;
+    else if (domain.totalAccess > avgAccess * 2) anomalyScore += 2;
+    
+    // User concentration anomaly (few users with many requests)
+    const accessPerUser = domain.totalAccess / domain.uniqueUsers.size;
+    if (accessPerUser > 20) anomalyScore += 3;
+    else if (accessPerUser > 10) anomalyScore += 2;
+    
+    // Category-based risk
+    if (domain.category === 'Entertainment' && domain.totalAccess > avgAccess) anomalyScore += 1;
+    if (domain.category === 'Social Media' && domain.totalAccess > avgAccess) anomalyScore += 1;
+    
+    // Suspicious domain patterns
+    if (domain.domain.length > 20 || domain.domain.includes('-') || domain.domain.includes('_')) {
+      anomalyScore += 1;
+    }
+    
+    domain.anomalyScore = Math.min(10, anomalyScore);
+  });
+  
+  const frequentUrls = allDomains
+    .map(stats => ({
+      ...stats,
+      uniqueUsers: stats.uniqueUsers.size,
+    }))
+    .filter(url => url.totalAccess >= 5) // Only show URLs with meaningful access
+    .sort((a, b) => b.totalAccess - a.totalAccess);
+  
+  return {
+    blockedUrls: blockedUrls.slice(0, 10),
+    frequentUrls: frequentUrls.slice(0, 10),
   };
 }
