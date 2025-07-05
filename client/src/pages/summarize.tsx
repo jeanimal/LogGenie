@@ -602,7 +602,7 @@ export default function Summarize() {
               </div>
 
               {/* URL Security Analytics */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                 {/* Blocked URLs Analysis */}
                 <Card>
                   <CardContent className="p-6">
@@ -675,6 +675,44 @@ export default function Summarize() {
                         <div className="text-center py-4 text-gray-500">
                           <BarChart3 className="h-8 w-8 mx-auto mb-2 text-green-500" />
                           <p className="text-sm">No frequent access patterns detected</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Rare or First Time URL Access */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Rare/First-Time URLs</h3>
+                    <p className="text-sm text-gray-600 mb-4">New or infrequently accessed domains indicating reconnaissance or data exfiltration</p>
+                    <div className="space-y-3">
+                      {(analytics as any).urlSecurityAnalytics.rareUrls?.slice(0, 5).map((url: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100">
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium text-gray-900 truncate block">{url.domain}</span>
+                            <div className="text-sm text-gray-600">{url.accessCount} access{url.accessCount > 1 ? 'es' : ''}</div>
+                            <div className="text-xs text-purple-600">{url.firstAccess}</div>
+                          </div>
+                          <div className="text-right ml-4">
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                url.suspicionLevel === 'High' ? "border-red-500 text-red-700" :
+                                url.suspicionLevel === 'Medium' ? "border-yellow-500 text-yellow-700" :
+                                "border-purple-500 text-purple-700"
+                              }
+                            >
+                              {url.suspicionLevel}
+                            </Badge>
+                            <div className="text-xs text-gray-500 mt-1">{url.accessPattern}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {((analytics as any).urlSecurityAnalytics.rareUrls?.length === 0 || !(analytics as any).urlSecurityAnalytics.rareUrls) && (
+                        <div className="text-center py-4 text-gray-500">
+                          <FileText className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                          <p className="text-sm">No rare URL access detected</p>
                         </div>
                       )}
                     </div>
@@ -1421,8 +1459,83 @@ function generateURLSecurityAnalytics(logs: LogEntry[]) {
     .filter(url => url.totalAccess >= 5) // Only show URLs with meaningful access
     .sort((a, b) => b.totalAccess - a.totalAccess);
   
+  // Analyze rare or first-time URL access
+  const rareUrls = allDomains
+    .filter(domain => domain.totalAccess <= 3) // Infrequent access
+    .map(domain => {
+      // Determine suspicion level based on various factors
+      let suspicionLevel = 'Low';
+      let accessPattern = 'Single access';
+      
+      // Check for suspicious patterns
+      if (domain.domain.includes('temp') || domain.domain.includes('tmp') || 
+          domain.domain.includes('test') || domain.domain.includes('staging')) {
+        suspicionLevel = 'Medium';
+        accessPattern = 'Temporary domain';
+      }
+      
+      if (domain.domain.length > 30 || domain.domain.split('.').length > 4) {
+        suspicionLevel = 'High';
+        accessPattern = 'Complex domain';
+      }
+      
+      if (domain.domain.includes('pastebin') || domain.domain.includes('github') || 
+          domain.domain.includes('dropbox') || domain.domain.includes('transfer')) {
+        suspicionLevel = 'Medium';
+        accessPattern = 'File sharing';
+      }
+      
+      // New domains accessed after business hours
+      const domainLogs = logs.filter(log => {
+        try {
+          return new URL(log.destinationUrl).hostname === domain.domain;
+        } catch {
+          return false;
+        }
+      });
+      
+      const afterHoursAccess = domainLogs.some(log => {
+        const hour = new Date(log.timestamp).getHours();
+        return hour < 6 || hour > 22;
+      });
+      
+      if (afterHoursAccess && domain.totalAccess <= 2) {
+        suspicionLevel = 'High';
+        accessPattern = 'After-hours access';
+      }
+      
+      // Format first access time
+      const firstAccessTime = Math.min(...domainLogs.map(log => new Date(log.timestamp).getTime()));
+      const firstAccess = new Date(firstAccessTime).toLocaleDateString();
+      
+      if (domain.totalAccess > 1) {
+        accessPattern = `${domain.totalAccess} accesses`;
+      }
+      
+      return {
+        domain: domain.domain,
+        accessCount: domain.totalAccess,
+        uniqueUsers: domain.uniqueUsers,
+        suspicionLevel,
+        accessPattern,
+        firstAccess,
+      };
+    })
+    .sort((a, b) => {
+      // Sort by suspicion level first, then by access count
+      const suspicionOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
+      const aSuspicion = suspicionOrder[a.suspicionLevel as keyof typeof suspicionOrder];
+      const bSuspicion = suspicionOrder[b.suspicionLevel as keyof typeof suspicionOrder];
+      
+      if (aSuspicion !== bSuspicion) {
+        return bSuspicion - aSuspicion;
+      }
+      return a.accessCount - b.accessCount;
+    });
+
   return {
     blockedUrls: blockedUrls.slice(0, 10),
     frequentUrls: frequentUrls.slice(0, 10),
+    rareUrls: rareUrls.slice(0, 10),
   };
 }
