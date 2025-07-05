@@ -167,7 +167,7 @@ export default function Dashboard() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">View Logs</h3>
                   <p className="text-sm text-gray-600 mb-4">Browse and search through uploaded logs</p>
                   <Button
-                    onClick={() => setLocation("/view")}
+                    onClick={() => setLocation("/view-logs")}
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
                   >
                     View All
