@@ -309,11 +309,10 @@ export default function ViewLogs() {
                         <TableRow>
                           <TableHead>Timestamp</TableHead>
                           <TableHead>Source IP</TableHead>
-                          <TableHead>Destination URL</TableHead>
+                          <TableHead>Destination</TableHead>
                           <TableHead>Action</TableHead>
                           <TableHead>Risk Level</TableHead>
-                          <TableHead>Response Code</TableHead>
-                          <TableHead>Category</TableHead>
+                          <TableHead>Details</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -325,7 +324,7 @@ export default function ViewLogs() {
                             <TableCell className="text-sm text-gray-900">
                               {log.sourceIp}
                             </TableCell>
-                            <TableCell className="text-sm text-gray-900 max-w-xs truncate">
+                            <TableCell className="text-sm text-gray-900">
                               {log.destinationUrl}
                             </TableCell>
                             <TableCell>
@@ -334,11 +333,10 @@ export default function ViewLogs() {
                             <TableCell>
                               {getRiskBadge(log.riskLevel)}
                             </TableCell>
-                            <TableCell className="text-sm text-gray-900">
-                              {log.responseCode || '-'}
-                            </TableCell>
-                            <TableCell className="text-sm text-gray-900">
-                              {log.category || '-'}
+                            <TableCell>
+                              <Button variant="link" className="text-primary hover:text-blue-700 p-0">
+                                View Details
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
