@@ -111,7 +111,26 @@ export default function ViewLogs() {
   });
 
   const { data: logsData, isLoading: logsLoading } = useQuery({
-    queryKey: ["/api/logs", 1, 1000, companyFilter === "all" ? "" : companyFilter, startDate, endDate],
+    queryKey: ["/api/logs", companyFilter, startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '1000',
+        ...(companyFilter !== 'all' && { companyId: companyFilter }),
+        ...(startDate && { startDate }),
+        ...(endDate && { endDate }),
+      });
+      
+      const res = await fetch(`/api/logs?${params.toString()}`, {
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      
+      return res.json();
+    },
     enabled: isAuthenticated,
   });
 
