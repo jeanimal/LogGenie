@@ -187,6 +187,10 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Fixed TanStack Query to properly fetch all logs (1000 limit) instead of default pagination (20)
   - Resolved URL parameter construction issue where queryKey wasn't being converted to proper API parameters
   - Enhanced table performance by loading complete dataset for client-side filtering and sorting
+  - Added comprehensive IP address security analytics with geolocation analysis, suspicious IP detection, and bot activity identification
+  - Implemented time-based analytics charts showing log trends over time and traffic patterns (hourly/daily/weekly)
+  - Created user-focused security analytics detecting failed login attempts, suspicious behavior, and abnormal resource access
+  - Added real-time risk scoring and threat level assessment for cybersecurity threat detection
 
 ## Changelog
 
