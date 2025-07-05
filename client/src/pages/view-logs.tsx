@@ -37,7 +37,6 @@ export default function ViewLogs() {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '20');
   const companyFilter = searchParams.get('company') || 'all';
-  const actionFilter = searchParams.get('action') || 'all';
   const timelineStart = parseInt(searchParams.get('timelineStart') || '0');
   const timelineEnd = parseInt(searchParams.get('timelineEnd') || '100');
   const timelineRange: [number, number] = [timelineStart, timelineEnd];
@@ -85,7 +84,7 @@ export default function ViewLogs() {
   });
 
   const { data: logsData, isLoading: logsLoading } = useQuery({
-    queryKey: ["/api/logs", page, limit, companyFilter === "all" ? "" : companyFilter, actionFilter === "all" ? "" : actionFilter, startDate, endDate],
+    queryKey: ["/api/logs", page, limit, companyFilter === "all" ? "" : companyFilter, startDate, endDate],
     enabled: isAuthenticated,
   });
 
@@ -188,7 +187,7 @@ export default function ViewLogs() {
           {/* Filters */}
           <Card className="mb-6">
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2">Company</Label>
                   <Select value={companyFilter} onValueChange={(value) => updateFilters({ company: value, page: 1 })}>
@@ -207,21 +206,19 @@ export default function ViewLogs() {
                 </div>
                 
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2">Action</Label>
-                  <Select value={actionFilter} onValueChange={(value) => updateFilters({ action: value, page: 1 })}>
+                  <Label className="text-sm font-medium text-gray-700 mb-2">Log Type</Label>
+                  <Select>
                     <SelectTrigger>
-                      <SelectValue placeholder="All Actions" />
+                      <SelectValue placeholder="All Types" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Actions</SelectItem>
-                      <SelectItem value="ALLOW">Allow</SelectItem>
-                      <SelectItem value="BLOCK">Block</SelectItem>
-                      <SelectItem value="FLAGGED">Flagged</SelectItem>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="zscaler_web_proxy">ZScaler Web Proxy</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="col-span-1 md:col-span-2">
+                <div className="col-span-1 md:col-span-1">
                   <div className="flex items-center space-x-2 mb-2">
                     <Clock className="h-4 w-4 text-blue-600" />
                     <Label className="text-sm font-medium text-gray-700">Timeline Filter</Label>
