@@ -25,6 +25,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Search, Calendar, Clock } from "lucide-react";
 
 export default function ViewLogs() {
@@ -32,6 +38,7 @@ export default function ViewLogs() {
   const { isAuthenticated, isLoading } = useAuth();
   const [location, setLocation] = useLocation();
   const searchParams = new URLSearchParams(useSearch());
+  const [selectedLog, setSelectedLog] = useState<any>(null);
 
   // Get filter values from URL or use defaults
   const page = parseInt(searchParams.get('page') || '1');
@@ -309,9 +316,9 @@ export default function ViewLogs() {
                         <TableRow>
                           <TableHead>Timestamp</TableHead>
                           <TableHead>Source IP</TableHead>
+                          <TableHead>User</TableHead>
                           <TableHead>Destination</TableHead>
                           <TableHead>Action</TableHead>
-                          <TableHead>Risk Level</TableHead>
                           <TableHead>Details</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -324,17 +331,24 @@ export default function ViewLogs() {
                             <TableCell className="text-sm text-gray-900">
                               {log.sourceIp}
                             </TableCell>
-                            <TableCell className="text-sm text-gray-900">
+                            <TableCell className="text-sm text-gray-900 max-w-48 truncate" title={log.userAgent || 'Unknown'}>
+                              {log.userAgent ? log.userAgent.split(' ')[0] : 'Unknown'}
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-900 max-w-64 truncate" title={log.destinationUrl}>
                               {log.destinationUrl}
                             </TableCell>
                             <TableCell>
-                              {getActionBadge(log.action)}
+                              <div className="flex items-center space-x-2">
+                                {getActionBadge(log.action)}
+                                {getRiskBadge(log.riskLevel)}
+                              </div>
                             </TableCell>
                             <TableCell>
-                              {getRiskBadge(log.riskLevel)}
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="link" className="text-primary hover:text-blue-700 p-0">
+                              <Button 
+                                variant="link" 
+                                className="text-primary hover:text-blue-700 p-0"
+                                onClick={() => setSelectedLog(log)}
+                              >
                                 View Details
                               </Button>
                             </TableCell>
@@ -407,6 +421,65 @@ export default function ViewLogs() {
           </Card>
         </div>
       </div>
+
+      {/* Log Details Modal */}
+      <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Log Entry Details</DialogTitle>
+          </DialogHeader>
+          {selectedLog && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Timestamp</Label>
+                  <p className="text-sm mt-1 p-2 bg-gray-50 rounded">{formatTimestamp(selectedLog.timestamp)}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Source IP</Label>
+                  <p className="text-sm mt-1 p-2 bg-gray-50 rounded">{selectedLog.sourceIp}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">User Agent</Label>
+                  <p className="text-sm mt-1 p-2 bg-gray-50 rounded break-all">{selectedLog.userAgent || 'Unknown'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Response Code</Label>
+                  <p className="text-sm mt-1 p-2 bg-gray-50 rounded">{selectedLog.responseCode || 'N/A'}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-sm font-medium text-gray-700">Destination URL</Label>
+                  <p className="text-sm mt-1 p-2 bg-gray-50 rounded break-all">{selectedLog.destinationUrl}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Action</Label>
+                  <div className="mt-1">{getActionBadge(selectedLog.action)}</div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Risk Level</Label>
+                  <div className="mt-1">{getRiskBadge(selectedLog.riskLevel)}</div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Category</Label>
+                  <p className="text-sm mt-1 p-2 bg-gray-50 rounded">{selectedLog.category || 'Uncategorized'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Bytes Transferred</Label>
+                  <p className="text-sm mt-1 p-2 bg-gray-50 rounded">{selectedLog.bytesTransferred ? `${selectedLog.bytesTransferred.toLocaleString()} bytes` : 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Log ID</Label>
+                  <p className="text-sm mt-1 p-2 bg-gray-50 rounded">{selectedLog.id}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Created At</Label>
+                  <p className="text-sm mt-1 p-2 bg-gray-50 rounded">{formatTimestamp(selectedLog.createdAt)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
