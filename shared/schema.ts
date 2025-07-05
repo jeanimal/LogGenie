@@ -54,13 +54,11 @@ export const zscalerLogs = pgTable("zscaler_logs", {
   id: serial("id").primaryKey(),
   timestamp: timestamp("timestamp").notNull(),
   sourceIp: varchar("source_ip").notNull(),
+  userId: text("user_id").notNull(),
   destinationUrl: text("destination_url").notNull(),
   action: varchar("action").notNull(), // ALLOWED, BLOCKED, FLAGGED
-  riskLevel: varchar("risk_level").notNull(), // LOW, MEDIUM, HIGH
-  userAgent: text("user_agent"),
-  bytesTransferred: integer("bytes_transferred"),
-  responseCode: integer("response_code"),
-  category: varchar("category"),
+  category: varchar("category"), // Education, News, Social Media, etc.
+  responseTime: integer("response_time"),
   companyId: integer("company_id").references(() => companies.id),
   createdAt: timestamp("created_at").defaultNow(),
 });

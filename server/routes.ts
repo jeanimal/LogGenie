@@ -212,12 +212,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: log.id,
           timestamp: log.timestamp.toISOString(),
           sourceIp: log.sourceIp,
+          userId: log.userId,
           destinationUrl: log.destinationUrl,
           action: log.action,
-          riskLevel: log.riskLevel,
-          userAgent: log.userAgent || undefined,
-          responseCode: log.responseCode || undefined,
-          category: log.category || undefined
+          category: log.category || undefined,
+          responseTime: log.responseTime || undefined
         })),
         sensitivity: sensitivity as 'low' | 'medium' | 'high',
         timeRange,
@@ -344,23 +343,22 @@ function parseLogFile(content: string, format: string, companyId: number) {
     for (const line of dataLines) {
       const fields = line.split(',').map(field => field.trim().replace(/"/g, ''));
       
-      if (fields.length >= 6) {
+      // Expected CSV format: timestamp, ip_address, user_id, url, action, category, response_time
+      if (fields.length >= 5) {
         try {
           const log = insertZscalerLogSchema.parse({
             timestamp: new Date(fields[0] || new Date().toISOString()),
             sourceIp: fields[1] || '0.0.0.0',
-            destinationUrl: fields[2] || 'unknown',
-            action: fields[3] || 'UNKNOWN',
-            riskLevel: fields[4] || 'LOW',
-            userAgent: fields[5] || 'Unknown',
-            bytesTransferred: parseInt(fields[6]) || 0,
-            responseCode: parseInt(fields[7]) || 200,
-            category: fields[8] || 'Other',
+            userId: fields[2] || 'unknown',
+            destinationUrl: fields[3] || 'unknown',
+            action: fields[4] || 'UNKNOWN',
+            category: fields[5] || 'Other',
+            responseTime: fields[6] ? parseInt(fields[6]) : null,
             companyId,
           });
           logs.push(log);
         } catch (error) {
-          console.warn('Skipping invalid log entry:', fields);
+          console.warn('Skipping invalid log entry:', fields, error);
         }
       }
     }

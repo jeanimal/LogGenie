@@ -210,7 +210,7 @@ export class DatabaseStorage implements IStorage {
       db.select({ count: count() }).from(companies),
       db.select({ count: count() }).from(zscalerLogs).where(and(eq(zscalerLogs.action, 'BLOCKED'), ...(whereConditions.length > 0 ? whereConditions : []))),
       db.selectDistinct({ sourceIp: zscalerLogs.sourceIp }).from(zscalerLogs).where(whereConditions.length > 0 ? and(...whereConditions) : undefined),
-      db.select({ count: count() }).from(zscalerLogs).where(and(eq(zscalerLogs.riskLevel, 'HIGH'), ...(whereConditions.length > 0 ? whereConditions : []))),
+      db.select({ count: count() }).from(zscalerLogs).where(and(eq(zscalerLogs.action, 'FLAGGED'), ...(whereConditions.length > 0 ? whereConditions : []))),
     ]);
 
     return {

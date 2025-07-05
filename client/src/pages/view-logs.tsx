@@ -143,19 +143,6 @@ export default function ViewLogs() {
     }
   };
 
-  const getRiskBadge = (riskLevel: string) => {
-    switch (riskLevel) {
-      case "HIGH":
-        return <Badge variant="destructive">HIGH</Badge>;
-      case "MEDIUM":
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">MEDIUM</Badge>;
-      case "LOW":
-        return <Badge variant="default" className="bg-green-100 text-green-800">LOW</Badge>;
-      default:
-        return <Badge variant="outline">{riskLevel}</Badge>;
-    }
-  };
-
   const totalPages = (logsData as any)?.total ? Math.ceil((logsData as any).total / limit) : 0;
 
   if (isLoading || !isAuthenticated) {
@@ -309,9 +296,11 @@ export default function ViewLogs() {
                         <TableRow>
                           <TableHead>Timestamp</TableHead>
                           <TableHead>Source IP</TableHead>
+                          <TableHead>User ID</TableHead>
                           <TableHead>Destination</TableHead>
                           <TableHead>Action</TableHead>
-                          <TableHead>Risk Level</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Response Time</TableHead>
                           <TableHead>Details</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -325,13 +314,19 @@ export default function ViewLogs() {
                               {log.sourceIp}
                             </TableCell>
                             <TableCell className="text-sm text-gray-900">
+                              {log.userId}
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-900">
                               {log.destinationUrl}
                             </TableCell>
                             <TableCell>
                               {getActionBadge(log.action)}
                             </TableCell>
-                            <TableCell>
-                              {getRiskBadge(log.riskLevel)}
+                            <TableCell className="text-sm text-gray-900">
+                              {log.category || 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-900">
+                              {log.responseTime ? `${log.responseTime}ms` : 'N/A'}
                             </TableCell>
                             <TableCell>
                               <Button variant="link" className="text-primary hover:text-blue-700 p-0">

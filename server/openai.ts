@@ -28,12 +28,11 @@ export interface AnomalyDetectionRequest {
     id: number;
     timestamp: string;
     sourceIp: string;
+    userId: string;
     destinationUrl: string;
     action: string;
-    riskLevel: string;
-    userAgent?: string;
-    responseCode?: number;
     category?: string;
+    responseTime?: number;
   }>;
   sensitivity: 'low' | 'medium' | 'high';
   timeRange: string;

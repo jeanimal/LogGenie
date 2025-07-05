@@ -172,6 +172,12 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Removed unused summarizeLogs function and /api/logs/summarize endpoint to clean up codebase
   - Removed "Generate AI Summary" button and AI summary display section from Summarize page
   - Simplified Summarize page to focus on statistical analytics and top IPs table
+  - Corrected ZScaler logs database schema to match actual CSV format
+  - Updated schema fields: timestamp, sourceIp, userId, destinationUrl, action, category, responseTime
+  - Removed old fields: riskLevel, userAgent, bytesTransferred, responseCode
+  - Updated View Logs page table headers and display to show new fields
+  - Fixed anomaly detection API to use new schema fields
+  - Updated analytics queries to use action-based risk assessment instead of riskLevel
 
 ## Changelog
 
