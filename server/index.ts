@@ -18,11 +18,11 @@ function log(message: string, source = "express") {
 
 // Production static file serving
 function serveStatic(app: express.Express) {
-  const distPath = path.resolve(process.cwd(), "public");
+  const distPath = path.resolve(process.cwd(), "dist/public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+      `Application cannot find the build directory '${distPath}', expected at 'dist/public'. Make sure to build the client first with 'npm run build'.`,
     );
   }
 
@@ -87,10 +87,10 @@ async function startServer() {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
+  // Use environment variable or default to port 5000
   // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // Port 5000 is the default for Replit and is not firewalled.
+  const port = parseInt(process.env.PORT || "5000", 10);
   server.listen({
     port,
     host: "0.0.0.0",
