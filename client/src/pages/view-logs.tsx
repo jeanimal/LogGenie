@@ -58,8 +58,6 @@ export default function ViewLogs() {
   const searchParams = new URLSearchParams(useSearch());
 
   // Get filter values from URL or use defaults
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '20');
   const companyFilter = searchParams.get('company') || 'all';
   const timelineStart = parseInt(searchParams.get('timelineStart') || '0');
   const timelineEnd = parseInt(searchParams.get('timelineEnd') || '100');
@@ -113,7 +111,7 @@ export default function ViewLogs() {
   });
 
   const { data: logsData, isLoading: logsLoading } = useQuery({
-    queryKey: ["/api/logs", page, limit, companyFilter === "all" ? "" : companyFilter, startDate, endDate],
+    queryKey: ["/api/logs", 1, 1000, companyFilter === "all" ? "" : companyFilter, startDate, endDate],
     enabled: isAuthenticated,
   });
 
@@ -148,8 +146,7 @@ export default function ViewLogs() {
     if (startDateObj && endDateObj) {
       updateFilters({
         startDate: startDateObj.toISOString(),
-        endDate: endDateObj.toISOString(),
-        page: 1
+        endDate: endDateObj.toISOString()
       });
     }
   };
@@ -321,7 +318,7 @@ export default function ViewLogs() {
     }),
   ], []);
 
-  // TanStack Table instance
+  // TanStack Table instance with pagination
   const table = useReactTable({
     data: (logsData as any)?.logs || [],
     columns,
@@ -338,7 +335,7 @@ export default function ViewLogs() {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const totalPages = (logsData as any)?.total ? Math.ceil((logsData as any).total / limit) : 0;
+
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -362,21 +359,7 @@ export default function ViewLogs() {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">View Security Logs</h1>
               <p className="text-gray-600">Browse and analyze uploaded security log entries</p>
             </div>
-            
-            {/* Pagination Controls */}
-            <div className="flex items-center space-x-4">
-              <Label className="text-sm font-medium text-gray-700">Show:</Label>
-              <Select value={limit.toString()} onValueChange={(value) => updateFilters({ limit: parseInt(value), page: 1 })}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="20">20 per page</SelectItem>
-                  <SelectItem value="50">50 per page</SelectItem>
-                  <SelectItem value="100">100 per page</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
           </div>
 
           {/* Filters */}
@@ -573,61 +556,13 @@ export default function ViewLogs() {
                     </Table>
                   </div>
                   
-                  {/* Pagination Footer */}
+                  {/* Table Info */}
                   <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-700">
-                        Showing{" "}
-                        <span className="font-medium">{(page - 1) * limit + 1}</span> to{" "}
-                        <span className="font-medium">
-                          {Math.min(page * limit, (logsData as any)?.total || 0)}
-                        </span>{" "}
-                        of <span className="font-medium">{(logsData as any)?.total || 0}</span> results
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateFilters({ page: Math.max(1, page - 1) })}
-                          disabled={page === 1}
-                        >
-                          Previous
-                        </Button>
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          const pageNum = i + 1;
-                          return (
-                            <Button
-                              key={pageNum}
-                              variant={page === pageNum ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => updateFilters({ page: pageNum })}
-                              className={page === pageNum ? "bg-primary text-white" : ""}
-                            >
-                              {pageNum}
-                            </Button>
-                          );
-                        })}
-                        {totalPages > 5 && (
-                          <>
-                            <span className="px-3 py-2 text-sm text-gray-500">...</span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateFilters({ page: totalPages })}
-                            >
-                              {totalPages}
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateFilters({ page: Math.min(totalPages, page + 1) })}
-                          disabled={page === totalPages}
-                        >
-                          Next
-                        </Button>
-                      </div>
+                    <div className="text-sm text-gray-700">
+                      Showing {table.getFilteredRowModel().rows.length} of {(logsData as any)?.logs?.length || 0} logs
+                      {(table.getState().columnFilters.length > 0 || table.getState().globalFilter) && 
+                        " (filtered)"
+                      }
                     </div>
                   </div>
                 </>
