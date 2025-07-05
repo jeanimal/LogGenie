@@ -1,3 +1,17 @@
+#!/bin/bash
+
+echo "🚀 Quick deployment fix for LogGenie..."
+
+# Create production ready files
+mkdir -p public
+
+# Build backend only (this works)
+echo "📦 Building backend..."
+npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+# Create a minimal HTML file that loads the dev client
+echo "📄 Creating production HTML..."
+cat > public/index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -59,3 +73,12 @@
     </script>
   </body>
 </html>
+EOF
+
+echo "✅ Quick deployment ready!"
+echo "📁 Files created:"
+echo "   - dist/index.js (backend bundle)"
+echo "   - public/index.html (frontend entry)"
+echo ""
+echo "🚀 Now you can deploy with Replit Deployments"
+echo "   The app will redirect to full functionality after login"
