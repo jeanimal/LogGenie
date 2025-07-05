@@ -178,6 +178,12 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Updated View Logs page table headers and display to show new fields
   - Fixed anomaly detection API to use new schema fields
   - Updated analytics queries to use action-based risk assessment instead of riskLevel
+  - Removed useless "View Details" column from View Logs page for cleaner interface
+  - Enhanced action badges with proper color coding: green for ALLOW, red for BLOCK, yellow for FLAGGED
+  - Implemented TanStack Table for advanced View Logs functionality with sortable columns and filtering
+  - Added global search across all log fields and individual column filters
+  - Each column header now supports click-to-sort with visual indicators (arrows)
+  - Added comprehensive filtering system with search inputs for each column
 
 ## Changelog
 

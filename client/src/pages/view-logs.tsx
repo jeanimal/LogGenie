@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -25,7 +26,30 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Calendar, Clock } from "lucide-react";
+import { Search, Calendar, Clock, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type SortingState,
+  type ColumnFiltersState,
+} from "@tanstack/react-table";
+
+// Define log data type
+type LogEntry = {
+  id: number;
+  timestamp: string;
+  sourceIp: string;
+  userId: string;
+  destinationUrl: string;
+  action: string;
+  category: string | null;
+  responseTime: number | null;
+};
 
 export default function ViewLogs() {
   const { toast } = useToast();
@@ -42,6 +66,11 @@ export default function ViewLogs() {
   const timelineRange: [number, number] = [timelineStart, timelineEnd];
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
+
+  // TanStack Table state
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState('');
 
   // Function to update URL with new filter values
   const updateFilters = (newFilters: Record<string, string | number>) => {
@@ -142,6 +171,172 @@ export default function ViewLogs() {
         return <Badge variant="outline">{action}</Badge>;
     }
   };
+
+  // TanStack Table column definitions
+  const columnHelper = createColumnHelper<LogEntry>();
+  
+  const columns = useMemo<ColumnDef<LogEntry, any>[]>(() => [
+    columnHelper.accessor('timestamp', {
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold"
+        >
+          Timestamp
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      ),
+      cell: ({ getValue }) => formatTimestamp(getValue() as string),
+      filterFn: 'includesString',
+    }),
+    columnHelper.accessor('sourceIp', {
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold"
+        >
+          Source IP
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      ),
+      cell: ({ getValue }) => <span className="text-sm text-gray-900">{getValue() as string}</span>,
+      filterFn: 'includesString',
+    }),
+    columnHelper.accessor('userId', {
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold"
+        >
+          User ID
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      ),
+      cell: ({ getValue }) => <span className="text-sm text-gray-900">{getValue() as string}</span>,
+      filterFn: 'includesString',
+    }),
+    columnHelper.accessor('destinationUrl', {
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold"
+        >
+          Destination
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      ),
+      cell: ({ getValue }) => <span className="text-sm text-gray-900">{getValue() as string}</span>,
+      filterFn: 'includesString',
+    }),
+    columnHelper.accessor('action', {
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold"
+        >
+          Action
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      ),
+      cell: ({ getValue }) => getActionBadge(getValue() as string),
+      filterFn: 'equalsString',
+    }),
+    columnHelper.accessor('category', {
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold"
+        >
+          Category
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      ),
+      cell: ({ getValue }) => <span className="text-sm text-gray-900">{(getValue() as string) || 'N/A'}</span>,
+      filterFn: 'includesString',
+    }),
+    columnHelper.accessor('responseTime', {
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold"
+        >
+          Response Time
+          {column.getIsSorted() === "asc" ? (
+            <ArrowUp className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <ArrowDown className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const value = getValue() as number | null;
+        return <span className="text-sm text-gray-900">{value ? `${value}ms` : 'N/A'}</span>;
+      },
+      filterFn: 'includesString',
+    }),
+  ], []);
+
+  // TanStack Table instance
+  const table = useReactTable({
+    data: (logsData as any)?.logs || [],
+    columns,
+    state: {
+      sorting,
+      columnFilters,
+      globalFilter,
+    },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
 
   const totalPages = (logsData as any)?.total ? Math.ceil((logsData as any).total / limit) : 0;
 
@@ -280,7 +475,22 @@ export default function ViewLogs() {
             </CardContent>
           </Card>
 
-          {/* Logs Table */}
+          {/* Global Search */}
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Search className="h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Search all columns..."
+                  value={globalFilter ?? ""}
+                  onChange={(event) => setGlobalFilter(String(event.target.value))}
+                  className="max-w-sm"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Enhanced Logs Table with TanStack */}
           <Card>
             <CardContent className="p-0">
               {logsLoading ? (
@@ -290,45 +500,75 @@ export default function ViewLogs() {
                 </div>
               ) : (
                 <>
+                  {/* Column Filters */}
+                  <div className="p-4 border-b border-gray-200 bg-gray-50">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                      {table.getHeaderGroups()[0]?.headers.map((header) => (
+                        <div key={header.id} className="space-y-1">
+                          <Label className="text-xs font-medium text-gray-600">
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                          </Label>
+                          {header.column.getCanFilter() && (
+                            <Input
+                              placeholder={`Filter...`}
+                              value={(header.column.getFilterValue() ?? "") as string}
+                              onChange={(event) =>
+                                header.column.setFilterValue(event.target.value)
+                              }
+                              className="h-8 text-xs"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Timestamp</TableHead>
-                          <TableHead>Source IP</TableHead>
-                          <TableHead>User ID</TableHead>
-                          <TableHead>Destination</TableHead>
-                          <TableHead>Action</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Response Time</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {(logsData as any)?.logs?.map((log: any) => (
-                          <TableRow key={log.id} className="hover:bg-gray-50">
-                            <TableCell className="text-sm text-gray-900">
-                              {formatTimestamp(log.timestamp)}
-                            </TableCell>
-                            <TableCell className="text-sm text-gray-900">
-                              {log.sourceIp}
-                            </TableCell>
-                            <TableCell className="text-sm text-gray-900">
-                              {log.userId}
-                            </TableCell>
-                            <TableCell className="text-sm text-gray-900">
-                              {log.destinationUrl}
-                            </TableCell>
-                            <TableCell>
-                              {getActionBadge(log.action)}
-                            </TableCell>
-                            <TableCell className="text-sm text-gray-900">
-                              {log.category || 'N/A'}
-                            </TableCell>
-                            <TableCell className="text-sm text-gray-900">
-                              {log.responseTime ? `${log.responseTime}ms` : 'N/A'}
-                            </TableCell>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                          <TableRow key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => (
+                              <TableHead key={header.id} className="text-left">
+                                {header.isPlaceholder
+                                  ? null
+                                  : flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext()
+                                    )}
+                              </TableHead>
+                            ))}
                           </TableRow>
                         ))}
+                      </TableHeader>
+                      <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                          table.getRowModel().rows.map((row) => (
+                            <TableRow
+                              key={row.id}
+                              data-state={row.getIsSelected() && "selected"}
+                              className="hover:bg-gray-50"
+                            >
+                              {row.getVisibleCells().map((cell) => (
+                                <TableCell key={cell.id}>
+                                  {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext()
+                                  )}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell
+                              colSpan={columns.length}
+                              className="h-24 text-center"
+                            >
+                              No results found.
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </div>
