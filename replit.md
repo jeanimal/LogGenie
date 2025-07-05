@@ -195,6 +195,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Implemented domain-based threat categorization (Malware/Phishing/Suspicious/Policy Violation) with visual risk indicators
   - Added anomaly scoring for URL access patterns detecting data exfiltration and reconnaissance activities
   - Created rare URL detection identifying infrequent domain access, temporary domains, file sharing platforms, and after-hours access patterns
+  - Fixed critical deployment issues: corrected static file serving path from '/public' to 'dist/public' matching Vite build output
+  - Updated port configuration to use environment variables with PORT fallback for deployment flexibility
+  - Enhanced error handling with clearer build directory error messages for easier troubleshooting
 
 ## Changelog
 
