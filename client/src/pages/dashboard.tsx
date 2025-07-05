@@ -79,7 +79,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Total Logs</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {statsLoading ? "..." : stats?.totalLogs || 0}
+                      {statsLoading ? "..." : (stats as any)?.totalLogs || 0}
                     </p>
                   </div>
                   <div className="p-3 bg-blue-100 rounded-xl">
@@ -95,7 +95,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Recent Uploads</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {statsLoading ? "..." : stats?.recentUploads || 0}
+                      {statsLoading ? "..." : (stats as any)?.recentUploads || 0}
                     </p>
                   </div>
                   <div className="p-3 bg-green-100 rounded-xl">
@@ -111,7 +111,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Anomalies Detected</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {statsLoading ? "..." : stats?.anomalies || 0}
+                      {statsLoading ? "..." : (stats as any)?.anomalies || 0}
                     </p>
                   </div>
                   <div className="p-3 bg-red-100 rounded-xl">
@@ -127,7 +127,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Companies</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {statsLoading ? "..." : stats?.companies || 0}
+                      {statsLoading ? "..." : (stats as any)?.companies || 0}
                     </p>
                   </div>
                   <div className="p-3 bg-purple-100 rounded-xl">

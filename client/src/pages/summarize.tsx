@@ -1,12 +1,21 @@
 import { useEffect, useState } from "react";
+import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { apiRequest } from "@/lib/queryClient";
 import Sidebar from "@/components/sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -27,12 +36,51 @@ import {
   BarChart3,
   PieChart,
   LineChart,
+  Filter,
+  Calendar,
+  Clock,
 } from "lucide-react";
+
+type LogEntry = {
+  id: number;
+  timestamp: string;
+  sourceIp: string;
+  userId: string;
+  destinationUrl: string;
+  action: string;
+  category: string | null;
+  responseTime: number | null;
+};
 
 export default function Summarize() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
+  const [location, setLocation] = useLocation();
+  const searchParams = new URLSearchParams(useSearch());
 
+  // Get filter values from URL or use defaults
+  const companyFilter = searchParams.get('company') || 'all';
+  const logTypeFilter = searchParams.get('logType') || 'all';
+  const timelineStart = parseInt(searchParams.get('timelineStart') || '0');
+  const timelineEnd = parseInt(searchParams.get('timelineEnd') || '100');
+  const timelineRange: [number, number] = [timelineStart, timelineEnd];
+  const startDate = searchParams.get('startDate') || '';
+  const endDate = searchParams.get('endDate') || '';
+
+  // Function to update URL with new filter values
+  const updateFilters = (newFilters: Record<string, string | number>) => {
+    const params = new URLSearchParams(searchParams);
+    
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        params.set(key, value.toString());
+      } else {
+        params.delete(key);
+      }
+    });
+    
+    setLocation(`/summarize?${params.toString()}`);
+  };
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -49,17 +97,68 @@ export default function Summarize() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ["/api/analytics/stats"],
+  const { data: companies } = useQuery({
+    queryKey: ["/api/companies"],
     enabled: isAuthenticated,
   });
 
-  const { data: topIPs, isLoading: topIPsLoading } = useQuery({
-    queryKey: ["/api/analytics/top-ips", 10],
+  const { data: logTypes } = useQuery({
+    queryKey: ["/api/log-types"],
     enabled: isAuthenticated,
   });
 
+  const { data: timelineData } = useQuery({
+    queryKey: ["/api/logs/timeline-range", companyFilter === "all" ? "" : companyFilter],
+    enabled: isAuthenticated,
+  });
 
+  const { data: logsData, isLoading: logsLoading } = useQuery({
+    queryKey: ["/api/logs", companyFilter, logTypeFilter, startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '1000',
+        ...(companyFilter !== 'all' && { companyId: companyFilter }),
+        ...(startDate && { startDate }),
+        ...(endDate && { endDate }),
+      });
+      
+      const res = await fetch(`/api/logs?${params.toString()}`, {
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      
+      return res.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  // Calculate analytics from filtered logs
+  const analytics = logsData?.logs ? calculateAnalytics(logsData.logs) : null;
+
+  // Timeline slider handling
+  const handleTimelineChange = (value: number[]) => {
+    const [start, end] = value as [number, number];
+    
+    if (!timelineData) return;
+    
+    const startTime = new Date((timelineData as any).earliestTimestamp);
+    const endTime = new Date((timelineData as any).latestTimestamp);
+    const totalMs = endTime.getTime() - startTime.getTime();
+    
+    const selectedStartTime = new Date(startTime.getTime() + (totalMs * start / 100));
+    const selectedEndTime = new Date(startTime.getTime() + (totalMs * end / 100));
+    
+    updateFilters({
+      timelineStart: start,
+      timelineEnd: end,
+      startDate: selectedStartTime.toISOString(),
+      endDate: selectedEndTime.toISOString(),
+    });
+  };
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -79,208 +178,341 @@ export default function Summarize() {
       <div className="ml-64 flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Log Analysis Summary</h1>
-            <p className="text-gray-600">Statistical overview and insights from your security logs</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Log Analytics Summary</h1>
+            <p className="text-gray-600">Comprehensive analysis and insights from filtered security logs</p>
           </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Events</p>
-                    <p className="text-3xl font-bold text-gray-900">
-                      {statsLoading ? "..." : (stats as any)?.totalLogs || 0}
-                    </p>
-                    <p className="text-sm text-green-600 mt-1 flex items-center">
-                      <TrendingUp className="text-xs mr-1 h-3 w-3" />
-                      +12% from last week
-                    </p>
-                  </div>
-                  <div className="p-3 bg-blue-100 rounded-xl">
-                    <FileText className="text-primary h-5 w-5" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Blocked Requests</p>
-                    <p className="text-3xl font-bold text-gray-900">
-                      {statsLoading ? "..." : (stats as any)?.blockedRequests || 0}
-                    </p>
-                    <p className="text-sm text-red-600 mt-1 flex items-center">
-                      <TrendingUp className="text-xs mr-1 h-3 w-3" />
-                      +3% from last week
-                    </p>
-                  </div>
-                  <div className="p-3 bg-red-100 rounded-xl">
-                    <Shield className="text-red-600 h-5 w-5" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Unique IPs</p>
-                    <p className="text-3xl font-bold text-gray-900">
-                      {statsLoading ? "..." : (stats as any)?.uniqueIPs || 0}
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1 flex items-center">
-                      <Minus className="text-xs mr-1 h-3 w-3" />
-                      No change
-                    </p>
-                  </div>
-                  <div className="p-3 bg-purple-100 rounded-xl">
-                    <Network className="text-purple-600 h-5 w-5" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">High Risk Events</p>
-                    <p className="text-3xl font-bold text-gray-900">
-                      {statsLoading ? "..." : (stats as any)?.highRiskEvents || 0}
-                    </p>
-                    <p className="text-sm text-yellow-600 mt-1 flex items-center">
-                      <TrendingDown className="text-xs mr-1 h-3 w-3" />
-                      -2 from yesterday
-                    </p>
-                  </div>
-                  <div className="p-3 bg-yellow-100 rounded-xl">
-                    <AlertTriangle className="text-yellow-600 h-5 w-5" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Charts Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* Event Types Chart */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Types Distribution</h3>
-                <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                  <div className="text-center text-gray-500">
-                    <PieChart className="h-16 w-16 mx-auto mb-4" />
-                    <p className="font-medium">Pie Chart</p>
-                    <p className="text-sm">Event Types Distribution</p>
-                    <p className="text-xs mt-2">Chart implementation with recharts</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Risk Levels Chart */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Level Breakdown</h3>
-                <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                  <div className="text-center text-gray-500">
-                    <BarChart3 className="h-16 w-16 mx-auto mb-4" />
-                    <p className="font-medium">Bar Chart</p>
-                    <p className="text-sm">Risk Level Distribution</p>
-                    <p className="text-xs mt-2">Chart implementation with recharts</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Timeline Chart */}
+          {/* Filters Section */}
           <Card className="mb-8">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Activity Timeline</h3>
-                <div className="flex space-x-2">
-                  <Button size="sm" className="bg-primary text-white">24H</Button>
-                  <Button size="sm" variant="outline">7D</Button>
-                  <Button size="sm" variant="outline">30D</Button>
+              <div className="flex items-center gap-2 mb-4">
+                <Filter className="h-5 w-5 text-gray-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Company Filter */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Company</Label>
+                  <Select
+                    value={companyFilter}
+                    onValueChange={(value) => updateFilters({ company: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Companies</SelectItem>
+                      {(companies as any)?.map((company: any) => (
+                        <SelectItem key={company.id} value={company.id.toString()}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Log Type Filter */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Log Type</Label>
+                  <Select
+                    value={logTypeFilter}
+                    onValueChange={(value) => updateFilters({ logType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select log type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Log Types</SelectItem>
+                      {(logTypes as any)?.map((logType: any) => (
+                        <SelectItem key={logType.id} value={logType.id.toString()}>
+                          {logType.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Timeline Range */}
+                <div className="space-y-2 md:col-span-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gray-600" />
+                    <Label className="text-sm font-medium text-gray-700">Timeline Range</Label>
+                  </div>
+                  {timelineData && (
+                    <div className="space-y-3">
+                      <Slider
+                        value={timelineRange}
+                        onValueChange={handleTimelineChange}
+                        max={100}
+                        min={0}
+                        step={1}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>{startDate ? new Date(startDate).toLocaleDateString() : new Date((timelineData as any).earliestTimestamp).toLocaleDateString()}</span>
+                        <span>{endDate ? new Date(endDate).toLocaleDateString() : new Date((timelineData as any).latestTimestamp).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="h-80 flex items-center justify-center bg-gray-50 rounded-lg">
-                <div className="text-center text-gray-500">
-                  <LineChart className="h-16 w-16 mx-auto mb-4" />
-                  <p className="font-medium">Line Chart</p>
-                  <p className="text-sm">Security Events Over Time</p>
-                  <p className="text-xs mt-2">Chart implementation with recharts</p>
-                </div>
+
+              {/* Clear Filters */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLocation('/summarize')}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Clear All Filters
+                </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Top Sources Table */}
-          <Card>
-            <CardContent className="p-0">
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Top Source IPs</h3>
+          {/* Analytics Content */}
+          {analytics ? (
+            <>
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Total Events</p>
+                        <p className="text-3xl font-bold text-gray-900">{analytics.totalEvents}</p>
+                        <p className="text-sm text-blue-600 mt-1">Filtered results</p>
+                      </div>
+                      <div className="p-3 bg-blue-100 rounded-xl">
+                        <FileText className="text-blue-600 h-5 w-5" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Blocked Requests</p>
+                        <p className="text-3xl font-bold text-gray-900">{analytics.blockedRequests}</p>
+                        <p className="text-sm text-red-600 mt-1">{analytics.blockRate}% block rate</p>
+                      </div>
+                      <div className="p-3 bg-red-100 rounded-xl">
+                        <Shield className="text-red-600 h-5 w-5" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Unique IPs</p>
+                        <p className="text-3xl font-bold text-gray-900">{analytics.uniqueIPs}</p>
+                        <p className="text-sm text-purple-600 mt-1">{analytics.avgEventsPerIP} avg/IP</p>
+                      </div>
+                      <div className="p-3 bg-purple-100 rounded-xl">
+                        <Network className="text-purple-600 h-5 w-5" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Unique Users</p>
+                        <p className="text-3xl font-bold text-gray-900">{analytics.uniqueUsers}</p>
+                        <p className="text-sm text-green-600 mt-1">{analytics.avgEventsPerUser} avg/user</p>
+                      </div>
+                      <div className="p-3 bg-green-100 rounded-xl">
+                        <AlertTriangle className="text-green-600 h-5 w-5" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              {topIPsLoading ? (
-                <div className="p-8 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading top IPs...</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>IP Address</TableHead>
-                        <TableHead>Events</TableHead>
-                        <TableHead>Risk Score</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(topIPs as any)?.map?.((ip: any, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-medium">{ip.sourceIp}</TableCell>
-                          <TableCell>{ip.eventCount}</TableCell>
-                          <TableCell>{ip.riskScore.toFixed(1)}</TableCell>
-                          <TableCell>
+
+              {/* Action Distribution and Top Sources */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                {/* Action Distribution */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Action Distribution</h3>
+                    <div className="space-y-4">
+                      {analytics.actionDistribution.map((action, index) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
                             <Badge
-                              variant={
-                                ip.status === "High Risk"
-                                  ? "destructive"
-                                  : ip.status === "Medium Risk"
-                                  ? "secondary"
-                                  : "default"
-                              }
                               className={
-                                ip.status === "Medium Risk"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : ip.status === "Low Risk"
-                                  ? "bg-green-100 text-green-800"
-                                  : ""
+                                action.action === 'ALLOW' ? 'bg-green-100 text-green-800' :
+                                action.action === 'BLOCK' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
                               }
                             >
-                              {ip.status}
+                              {action.action}
                             </Badge>
-                          </TableCell>
-                        </TableRow>
+                            <span className="text-sm text-gray-600">{action.count} events</span>
+                          </div>
+                          <span className="text-sm font-medium text-gray-900">{action.percentage}%</span>
+                        </div>
                       ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    </div>
+                  </CardContent>
+                </Card>
 
+                {/* Top Source IPs */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Source IPs</h3>
+                    <div className="space-y-3">
+                      {analytics.topSourceIPs.slice(0, 5).map((ip, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div>
+                            <span className="font-medium text-gray-900">{ip.sourceIp}</span>
+                            <div className="text-sm text-gray-600">{ip.count} events</div>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            #{index + 1}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
+              {/* Categories and Response Times */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                {/* Top Categories */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Categories</h3>
+                    <div className="space-y-3">
+                      {analytics.topCategories.slice(0, 5).map((category, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div>
+                            <span className="font-medium text-gray-900">{category.category || 'Uncategorized'}</span>
+                            <div className="text-sm text-gray-600">{category.count} events</div>
+                          </div>
+                          <span className="text-sm font-medium text-gray-900">{category.percentage}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Response Time Stats */}
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Response Time Analysis</h3>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                        <span className="text-sm font-medium text-gray-700">Average Response Time</span>
+                        <span className="text-lg font-bold text-blue-600">{analytics.avgResponseTime}ms</span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                        <span className="text-sm font-medium text-gray-700">Minimum Response Time</span>
+                        <span className="text-lg font-bold text-green-600">{analytics.minResponseTime}ms</span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                        <span className="text-sm font-medium text-gray-700">Maximum Response Time</span>
+                        <span className="text-lg font-bold text-red-600">{analytics.maxResponseTime}ms</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          ) : logsLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading analytics data...</p>
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <BarChart3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Data Available</h3>
+                <p className="text-gray-600">No logs found matching the current filters. Try adjusting your filter criteria.</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
   );
+}
+
+// Analytics calculation function
+function calculateAnalytics(logs: LogEntry[]) {
+  const totalEvents = logs.length;
+  const blockedRequests = logs.filter(log => log.action === 'BLOCK').length;
+  const uniqueIPs = new Set(logs.map(log => log.sourceIp)).size;
+  const uniqueUsers = new Set(logs.map(log => log.userId)).size;
+  
+  // Action distribution
+  const actionCounts = logs.reduce((acc, log) => {
+    acc[log.action] = (acc[log.action] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const actionDistribution = Object.entries(actionCounts).map(([action, count]) => ({
+    action,
+    count,
+    percentage: Math.round((count / totalEvents) * 100)
+  })).sort((a, b) => b.count - a.count);
+  
+  // Top source IPs
+  const ipCounts = logs.reduce((acc, log) => {
+    acc[log.sourceIp] = (acc[log.sourceIp] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const topSourceIPs = Object.entries(ipCounts).map(([sourceIp, count]) => ({
+    sourceIp,
+    count
+  })).sort((a, b) => b.count - a.count);
+  
+  // Top categories
+  const categoryCounts = logs.reduce((acc, log) => {
+    const category = log.category || 'Uncategorized';
+    acc[category] = (acc[category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const topCategories = Object.entries(categoryCounts).map(([category, count]) => ({
+    category,
+    count,
+    percentage: Math.round((count / totalEvents) * 100)
+  })).sort((a, b) => b.count - a.count);
+  
+  // Response time stats
+  const responseTimes = logs.filter(log => log.responseTime !== null).map(log => log.responseTime!);
+  const avgResponseTime = responseTimes.length > 0 
+    ? Math.round(responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length)
+    : 0;
+  const minResponseTime = responseTimes.length > 0 ? Math.min(...responseTimes) : 0;
+  const maxResponseTime = responseTimes.length > 0 ? Math.max(...responseTimes) : 0;
+  
+  return {
+    totalEvents,
+    blockedRequests,
+    blockRate: Math.round((blockedRequests / totalEvents) * 100),
+    uniqueIPs,
+    uniqueUsers,
+    avgEventsPerIP: Math.round(totalEvents / uniqueIPs),
+    avgEventsPerUser: Math.round(totalEvents / uniqueUsers),
+    actionDistribution,
+    topSourceIPs,
+    topCategories,
+    avgResponseTime,
+    minResponseTime,
+    maxResponseTime,
+  };
 }
