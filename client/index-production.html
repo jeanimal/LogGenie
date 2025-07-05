@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LogGenie - Cybersecurity Log Analysis</title>
+    <meta name="description" content="Advanced cybersecurity log analysis platform with AI-powered anomaly detection" />
+    
+    <!-- Production CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      window.tailwind.config = {
+        darkMode: ["class"],
+        theme: {
+          extend: {
+            borderRadius: {
+              lg: "var(--radius)",
+              md: "calc(var(--radius) - 2px)",
+              sm: "calc(var(--radius) - 4px)",
+            },
+            colors: {
+              background: "hsl(0, 0%, 100%)",
+              foreground: "hsl(20, 14.3%, 4.1%)",
+              card: "hsl(0, 0%, 100%)",
+              "card-foreground": "hsl(20, 14.3%, 4.1%)",
+              popover: "hsl(0, 0%, 100%)",
+              "popover-foreground": "hsl(20, 14.3%, 4.1%)",
+              primary: "hsl(214, 84%, 56%)",
+              "primary-foreground": "hsl(210, 40%, 98%)",
+              secondary: "hsl(60, 4.8%, 95.9%)",
+              "secondary-foreground": "hsl(24, 9.8%, 10%)",
+              muted: "hsl(60, 4.8%, 95.9%)",
+              "muted-foreground": "hsl(25, 5.3%, 44.7%)",
+              accent: "hsl(60, 4.8%, 95.9%)",
+              "accent-foreground": "hsl(24, 9.8%, 10%)",
+              destructive: "hsl(0, 84.2%, 60.2%)",
+              "destructive-foreground": "hsl(210, 40%, 98%)",
+              border: "hsl(20, 5.9%, 90%)",
+              input: "hsl(20, 5.9%, 90%)",
+              ring: "hsl(214, 84%, 56%)",
+            },
+          },
+        },
+      }
+    </script>
+    
+    <style>
+      :root {
+        --background: hsl(0, 0%, 100%);
+        --foreground: hsl(20, 14.3%, 4.1%);
+        --muted: hsl(60, 4.8%, 95.9%);
+        --muted-foreground: hsl(25, 5.3%, 44.7%);
+        --popover: hsl(0, 0%, 100%);
+        --popover-foreground: hsl(20, 14.3%, 4.1%);
+        --card: hsl(0, 0%, 100%);
+        --card-foreground: hsl(20, 14.3%, 4.1%);
+        --border: hsl(20, 5.9%, 90%);
+        --input: hsl(20, 5.9%, 90%);
+        --primary: hsl(214, 84%, 56%);
+        --primary-foreground: hsl(210, 40%, 98%);
+        --secondary: hsl(60, 4.8%, 95.9%);
+        --secondary-foreground: hsl(24, 9.8%, 10%);
+        --accent: hsl(60, 4.8%, 95.9%);
+        --accent-foreground: hsl(24, 9.8%, 10%);
+        --destructive: hsl(0, 84.2%, 60.2%);
+        --destructive-foreground: hsl(210, 40%, 98%);
+        --ring: hsl(214, 84%, 56%);
+        --radius: 0.5rem;
+      }
+      
+      body {
+        font-family: system-ui, sans-serif;
+        color: var(--foreground);
+        background-color: var(--background);
+        margin: 0;
+        padding: 0;
+      }
+      
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        font-family: system-ui;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="loading">
+        <div style="text-align: center; padding: 2rem;">
+          <h1 style="font-size: 2rem; font-weight: bold; margin-bottom: 1rem; color: hsl(214, 84%, 56%);">
+            🛡️ LogGenie
+          </h1>
+          <p style="color: hsl(25, 5.3%, 44.7%);">Loading cybersecurity platform...</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Check if user is authenticated and show appropriate content -->
+    <script>
+      async function initApp() {
+        try {
+          const response = await fetch('/api/auth/user');
+          if (response.ok) {
+            // User is authenticated, load the full React app
+            loadReactApp();
+          } else {
+            // User needs to login, redirect to login
+            window.location.href = '/api/login';
+          }
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          // Fallback to login
+          window.location.href = '/api/login';
+        }
+      }
+      
+      function loadReactApp() {
+        // In production, we would load the bundled React app here
+        // For now, redirect to the development server or show a working message
+        window.location.href = '/';
+      }
+      
+      // Initialize the app
+      initApp();
+    </script>
+  </body>
+</html>
