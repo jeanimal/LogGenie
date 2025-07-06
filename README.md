@@ -4,7 +4,7 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
 
 ## Features
 
-- **Authentication**: Secure login using Replit Auth
+- **Authentication**: Secure login using Replit Auth ⚠️ *Requires Replit environment - cannot run standalone*
 - **Log Management**: Upload and view security logs with pagination (supports CSV and TXT formats)
 - **Analytics**: Statistical summaries and visualization charts
 - **Anomaly Detection**: AI-powered threat detection with OpenAI integration
