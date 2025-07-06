@@ -28,11 +28,9 @@ Respond with JSON in this exact format:
   }
 }
 
-Focus on:
-- Blocked requests (action: "BLOCKED") which may indicate attack attempts
-- Unusual destination URLs or domains
-- Suspicious user agents
-- High-risk categories (malware, phishing sites)
-- Unusual traffic patterns or volumes
-- Geographic or temporal anomalies
-- Protocol or encoding anomalies
+Focus on these anomaly types:
+- Credential stuffing
+- Advanced Persistent Threats
+- Insider Threats
+- Botnet activities
+- Lateral movement
