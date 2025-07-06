@@ -1,2 +1,0 @@
-2025-06-15 23:48:09.144866 203.146.68.57 user35 http://example1.com/page2 ALLOW Malware 57ms
-2025-06-15 21:42:09.144884 124.110.59.72 user41 http://example5.com/login ALLOW Social Media 493ms
