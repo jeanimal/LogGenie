@@ -194,32 +194,6 @@ npx vitest run server/tests/zscalerParser.test.ts --config vitest.config.ts
 npx vitest run --run "*parser*"
 ```
 
-#### Test Coverage
-The current test suite includes:
-- **ZScaler Parser Tests**: 18 test cases covering CSV and TXT format parsing
-  - Valid log parsing for both formats
-  - Edge cases (empty content, invalid formats, malformed data)
-  - Multi-word category handling
-  - Response time parsing and validation
-  - Data type conversion and schema validation
-- **Generic Parser Factory**: Type validation and routing tests
-  - Log type ID validation
-  - Parser routing logic
-  - Error handling for unsupported formats
-
-#### Test Structure
-```
-server/tests/
-├── zscalerParser.test.ts    # Parser unit tests
-└── ...                     # Additional test files
-```
-
-#### Adding New Tests
-When adding new functionality:
-1. Create test files in `server/tests/` directory
-2. Use `.test.ts` extension for test files
-3. Import from relative paths using the configured aliases
-4. Follow existing test patterns for consistency
 
 ### Development Mode
 
@@ -313,35 +287,6 @@ docker logs loggenie-db
 docker logs -f loggenie-app
 ```
 
-### Troubleshooting
-
-#### Common Issues
-
-1. **Port Already in Use**
-   ```bash
-   # Check what's using the port
-   lsof -i :3000
-   
-   # Kill the process or use a different port
-   docker run -p 3001:5000 loggenie
-   ```
-
-2. **Database Connection Issues**
-   ```bash
-   # Check database container status
-   docker ps | grep postgres
-   
-   # Test database connection
-   docker exec -it loggenie-db psql -U postgres -d loggenie
-   ```
-
-3. **Permission Issues**
-   ```bash
-   # Fix file permissions
-   sudo chown -R $USER:$USER ./uploads
-   chmod 755 ./uploads
-   ```
-
 ## API Documentation
 
 ### Authentication Endpoints
@@ -363,22 +308,6 @@ docker logs -f loggenie-app
 - `GET /api/analytics/top-ips` - Get top source IPs
 - `POST /api/analytics/anomalies` - Detect anomalies in logs
 
-### Sample API Requests
-
-```bash
-# Get logs with pagination
-curl "http://localhost:3000/api/logs?page=1&limit=20&company=1"
-
-# Upload a log file
-curl -X POST \
-  -F "file=@sample.csv" \
-  -F "companyId=1" \
-  -F "logTypeId=1" \
-  http://localhost:3000/api/upload
-
-# Get analytics statistics
-curl "http://localhost:3000/api/analytics/stats"
-```
 
 ## Database Schema
 
@@ -420,29 +349,31 @@ Each analysis provides:
 - **Confidence scores** for each detected anomaly
 - **Summary insights** with common patterns and overall recommendations
 
+### Detection options in the UI
+
+On the anomaly detection screen, users can control the data to be analyzed:
+- **Time Range** - Filter logs by time period (24h, 7d, 30d, or all)
+- **Company Filter** - Analyze logs from specific organizations
+
+The user can also control the following options related to the AI model:
+- **Temperature** (0.0-2.0) - Controls AI creativity vs. consistency (default: 0.2 for focused analysis)
+- **Max Tokens** - Response length limit (default: 2000).  More tokens are correlated with better responses but are more costly for AI usage.
+
 ### Prompt Management System
 
-The AI system uses a modular prompt architecture stored in the `/prompts` directory:
+Under the hood, the AI system uses a modular prompt architecture that allows non-technical users to modify AI behavior without touching application code.
+
+The core prompts are stored in the `/prompts` directory:
 
 - **`anomaly-detection-system.txt`** - Core system prompt defining the AI's role and analysis methodology
 - **`anomaly-detection-user-template.txt`** - User prompt template with variable substitution for dynamic content
-
-### Template Variables
 
 The user prompt template supports dynamic content injection:
 - `{{logCount}}` - Number of logs being analyzed
 - `{{timeRange}}` - Time period for the analysis
 - `{{logData}}` - JSON-formatted log entries
 
-### Configuration
-
-Anomaly detection can be configured with:
-- **Temperature** (0.0-2.0) - Controls AI creativity vs. consistency (default: 0.2 for focused analysis)
-- **Max Tokens** - Response length limit (default: 2000 for comprehensive analysis)
-- **Time Range** - Filter logs by time period (24h, 7d, 30d, or all)
-- **Company Filter** - Analyze logs from specific organizations
-
-### API Usage
+### Example API Usage
 
 ```bash
 # Detect anomalies in recent logs
@@ -456,16 +387,6 @@ curl -X POST http://localhost:3000/api/anomalies/detect \
   }'
 ```
 
-### Customizing AI Analysis
-
-To modify the analysis behavior:
-
-1. **Edit system prompt** - Modify `/prompts/anomaly-detection-system.txt` to change the AI's analytical approach
-2. **Update user template** - Modify `/prompts/anomaly-detection-user-template.txt` to change the analysis instructions
-3. **Add template variables** - Extend the `loadTemplate()` function in `server/openai.ts` for new dynamic content
-
-The template system allows non-technical users to modify AI behavior without touching application code.
-
 ## Security Considerations
 
 - All routes require authentication except landing page
@@ -474,74 +395,12 @@ The template system allows non-technical users to modify AI behavior without tou
 - SQL injection protection via Drizzle ORM
 - CORS configuration for production deployment
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Docker Troubleshooting
-
-### Error: "Cannot find package 'vite' imported from /app/dist/index.js"
-
-This error means you're running an old Docker image. Follow these steps exactly:
-
-```bash
-# 1. Stop and remove ALL existing containers
-docker stop loggenie-app loggenie-db 2>/dev/null || true
-docker rm loggenie-app loggenie-db 2>/dev/null || true
-
-# 2. Remove the old image completely
-docker rmi loggenie 2>/dev/null || true
-
-# 3. Clean up any dangling images
-docker system prune -f
-
-# 4. Rebuild the image with the new Dockerfile (use --no-cache!)
-docker build -t loggenie . --no-cache
-
-# 5. Start fresh containers
-docker run -d \
-  --name loggenie-db \
-  -e POSTGRES_DB=loggenie \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=password \
-  -p 5432:5432 \
-  postgres:15
-
-# 6. Wait for database to be ready
-sleep 10
-
-# 7. Start the application
-docker run -d \
-  --name loggenie-app \
-  -p 3000:5000 \
-  -e NODE_ENV=development \
-  -e DATABASE_URL=postgresql://postgres:password@loggenie-db:5432/loggenie \
-  -e SESSION_SECRET=your-secret-key \
-  --link loggenie-db:db \
-  loggenie
-
-# 8. Check if it's working
-docker logs loggenie-app
-```
-
-**Alternative: Use Docker Compose**
-```bash
-docker-compose down --volumes
-docker-compose build --no-cache
-docker-compose up -d
-```
-
 ## Support
 
 For support and questions:
-- Check the troubleshooting section above
 - Review the application logs
 - Open an issue in the repository
