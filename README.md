@@ -35,6 +35,69 @@ LogGenie is a web application designed to assist cybersecurity operations analys
 - Development and production configurations
 - Health checks and monitoring
 
+## AI-Powered Anomaly Detection
+
+LogGenie includes sophisticated AI-powered anomaly detection using OpenAI's GPT-4o model to identify potential cybersecurity threats in log data.
+
+### How It Works
+
+The anomaly detection system analyzes uploaded logs using advanced language models to identify:
+
+- **Blocked requests** indicating potential attack attempts
+- **Unusual destination URLs** or suspicious domains  
+- **High-risk categories** like malware and phishing sites
+- **Suspicious traffic patterns** and volume anomalies
+- **Geographic and temporal anomalies** in access patterns
+- **Protocol and encoding irregularities**
+
+### Detection Results
+
+Each analysis provides:
+- **Anomaly classifications** with severity levels (low, medium, high, critical)
+- **Threat categories** (malware, phishing, data exfiltration, brute force, etc.)
+- **Specific indicators** explaining why each log entry is suspicious
+- **Recommended actions** for security teams
+- **Confidence scores** for each detected anomaly
+- **Summary insights** with common patterns and overall recommendations
+
+### Detection options in the UI
+
+On the anomaly detection screen, users can control the data to be analyzed:
+- **Time Range** - Filter logs by time period (24h, 7d, 30d, or all)
+- **Company Filter** - Analyze logs from specific organizations
+
+The user can also control the following options related to the AI model:
+- **Temperature** (0.0-2.0) - Controls AI creativity vs. consistency (default: 0.2 for focused analysis)
+- **Max Tokens** - Response length limit (default: 2000).  More tokens are correlated with better responses but are more costly for AI usage.
+
+### Prompt Management System
+
+Under the hood, the AI system uses a modular prompt architecture that allows non-technical users to modify AI behavior without touching application code.
+
+The core prompts are stored in the `/prompts` directory:
+
+- **`anomaly-detection-system.txt`** - Core system prompt defining the AI's role and analysis methodology
+- **`anomaly-detection-user-template.txt`** - User prompt template with variable substitution for dynamic content
+
+The user prompt template supports dynamic content injection:
+- `{{logCount}}` - Number of logs being analyzed
+- `{{timeRange}}` - Time period for the analysis
+- `{{logData}}` - JSON-formatted log entries
+
+### Example API Usage
+
+```bash
+# Detect anomalies in recent logs
+curl -X POST http://localhost:3000/api/anomalies/detect \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timeRange": "24h",
+    "companyId": 1,
+    "temperature": 0.2,
+    "maxTokens": 2000
+  }'
+```
+
 ## Getting Started
 
 ### Prerequisites
@@ -323,69 +386,6 @@ docker logs -f loggenie-app
 ### Sample Data
 
 The application starts with an empty database. Sample ZScaler logs are available in the `sample_logs/` directory for testing purposes.
-
-## AI-Powered Anomaly Detection
-
-LogGenie includes sophisticated AI-powered anomaly detection using OpenAI's GPT-4o model to identify potential cybersecurity threats in log data.
-
-### How It Works
-
-The anomaly detection system analyzes uploaded logs using advanced language models to identify:
-
-- **Blocked requests** indicating potential attack attempts
-- **Unusual destination URLs** or suspicious domains  
-- **High-risk categories** like malware and phishing sites
-- **Suspicious traffic patterns** and volume anomalies
-- **Geographic and temporal anomalies** in access patterns
-- **Protocol and encoding irregularities**
-
-### Detection Results
-
-Each analysis provides:
-- **Anomaly classifications** with severity levels (low, medium, high, critical)
-- **Threat categories** (malware, phishing, data exfiltration, brute force, etc.)
-- **Specific indicators** explaining why each log entry is suspicious
-- **Recommended actions** for security teams
-- **Confidence scores** for each detected anomaly
-- **Summary insights** with common patterns and overall recommendations
-
-### Detection options in the UI
-
-On the anomaly detection screen, users can control the data to be analyzed:
-- **Time Range** - Filter logs by time period (24h, 7d, 30d, or all)
-- **Company Filter** - Analyze logs from specific organizations
-
-The user can also control the following options related to the AI model:
-- **Temperature** (0.0-2.0) - Controls AI creativity vs. consistency (default: 0.2 for focused analysis)
-- **Max Tokens** - Response length limit (default: 2000).  More tokens are correlated with better responses but are more costly for AI usage.
-
-### Prompt Management System
-
-Under the hood, the AI system uses a modular prompt architecture that allows non-technical users to modify AI behavior without touching application code.
-
-The core prompts are stored in the `/prompts` directory:
-
-- **`anomaly-detection-system.txt`** - Core system prompt defining the AI's role and analysis methodology
-- **`anomaly-detection-user-template.txt`** - User prompt template with variable substitution for dynamic content
-
-The user prompt template supports dynamic content injection:
-- `{{logCount}}` - Number of logs being analyzed
-- `{{timeRange}}` - Time period for the analysis
-- `{{logData}}` - JSON-formatted log entries
-
-### Example API Usage
-
-```bash
-# Detect anomalies in recent logs
-curl -X POST http://localhost:3000/api/anomalies/detect \
-  -H "Content-Type: application/json" \
-  -d '{
-    "timeRange": "24h",
-    "companyId": 1,
-    "temperature": 0.2,
-    "maxTokens": 2000
-  }'
-```
 
 ## Security Considerations
 
