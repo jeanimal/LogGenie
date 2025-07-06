@@ -201,6 +201,8 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Implemented ZScaler text log parsing for space-separated log format with multi-word category support
   - Added comprehensive text file upload functionality handling both simple and complex log entries
   - Enhanced upload page to support both CSV and TXT formats with automatic parsing detection
+  - Refactored parsing logic into dedicated parsers directory for better code organization
+  - Added comprehensive unit tests for ZScaler parser with 18 test cases covering CSV/TXT formats, edge cases, and validation
 
 ## Changelog
 

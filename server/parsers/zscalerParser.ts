@@ -1,7 +1,7 @@
-import { insertZscalerLogSchema } from "@shared/schema";
+import { insertZscalerLogSchema, type InsertZscalerLog } from "@shared/schema";
 
-export function parseLogFile(content: string, format: string, companyId: number) {
-  const logs = [];
+export function parseLogFile(content: string, format: string, companyId: number): InsertZscalerLog[] {
+  const logs: InsertZscalerLog[] = [];
   const lines = content.split('\n').filter(line => line.trim());
 
   if (format === 'csv') {
@@ -53,12 +53,14 @@ export function parseLogFile(content: string, format: string, companyId: number)
           
           // Response time is always the last part (ends with 'ms')
           const responseTimePart = parts[parts.length - 1];
-          const responseTime = responseTimePart.endsWith('ms') 
+          const hasResponseTime = responseTimePart.endsWith('ms');
+          const responseTime = hasResponseTime 
             ? parseInt(responseTimePart.replace('ms', '')) 
             : null;
           
-          // Category is everything between action and response time
-          const categoryParts = parts.slice(6, parts.length - 1);
+          // Category is everything between action and response time (or end if no response time)
+          const categoryEndIndex = hasResponseTime ? parts.length - 1 : parts.length;
+          const categoryParts = parts.slice(6, categoryEndIndex);
           const category = categoryParts.length > 0 ? categoryParts.join(' ') : 'Other';
           
           const log = insertZscalerLogSchema.parse({
