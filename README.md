@@ -161,6 +161,57 @@ npm run db:push
 
 The application will automatically create the necessary database tables. Docker containers include sample data for immediate testing.
 
+### Running Tests
+
+The application includes comprehensive unit tests for critical components, particularly the log parsing functionality.
+
+#### Prerequisites for Testing
+Tests use Vitest framework and are already configured with proper TypeScript support.
+
+#### Run All Tests
+```bash
+# Run all tests once
+npx vitest run
+
+# Run tests in watch mode for development
+npx vitest
+
+# Run tests with coverage
+npx vitest run --coverage
+```
+
+#### Run Specific Test Files
+```bash
+# Run only the ZScaler parser tests
+npx vitest run server/tests/zscalerParser.test.ts --config vitest.config.ts
+
+# Run tests matching a pattern
+npx vitest run --run "*parser*"
+```
+
+#### Test Coverage
+The current test suite includes:
+- **ZScaler Parser Tests**: 18 test cases covering CSV and TXT format parsing
+  - Valid log parsing for both formats
+  - Edge cases (empty content, invalid formats, malformed data)
+  - Multi-word category handling
+  - Response time parsing and validation
+  - Data type conversion and schema validation
+
+#### Test Structure
+```
+server/tests/
+├── zscalerParser.test.ts    # Parser unit tests
+└── ...                     # Additional test files
+```
+
+#### Adding New Tests
+When adding new functionality:
+1. Create test files in `server/tests/` directory
+2. Use `.test.ts` extension for test files
+3. Import from relative paths using the configured aliases
+4. Follow existing test patterns for consistency
+
 ### Development Mode
 
 For local development without Docker:
