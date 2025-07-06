@@ -15,6 +15,8 @@ export function parseLogFile(
   // Get log type information to determine parser
   const logType = getLogTypeById(logTypeId);
   
+  console.log(`[LogParserFactory] Parsing with logTypeId: ${logTypeId}, found logType:`, logType);
+  
   if (!logType) {
     throw new Error(`Unknown log type ID: ${logTypeId}`);
   }
@@ -22,7 +24,9 @@ export function parseLogFile(
   // Route to appropriate parser based on log type
   switch (logType.name) {
     case 'ZScaler Web Proxy Log':
+      console.log(`[LogParserFactory] Using ZScaler parser for format: ${format}, content length: ${content.length}`);
       const logs = parseZScalerLog(content, format, companyId);
+      console.log(`[LogParserFactory] ZScaler parser returned ${logs.length} logs`);
       return { logs };
       
     default:

@@ -132,6 +132,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fileContent = req.file.buffer.toString('utf-8');
       const parseResult = parseLogFile(fileContent, format, parseInt(company), parseInt(logType));
       
+      // Check if any logs were parsed
+      if (parseResult.logs.length === 0) {
+        return res.status(400).json({ 
+          message: "No valid log entries found in the uploaded file. Please check the file format and content." 
+        });
+      }
+      
       // Create log records
       const createdLogs = await storage.createZscalerLogs(parseResult.logs);
       
