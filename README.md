@@ -5,9 +5,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
 ## Features
 
 - **Authentication**: Secure login using Replit Auth
-- **Log Management**: Upload and view security logs with pagination
+- **Log Management**: Upload and view security logs with pagination (supports CSV and TXT formats)
 - **Analytics**: Statistical summaries and visualization charts
-- **Anomaly Detection**: AI-powered threat detection (LLM integration ready)
+- **Anomaly Detection**: AI-powered threat detection with OpenAI integration
 - **Multi-tenant**: Support for multiple companies and log types
 - **Professional UI**: Clean, responsive cybersecurity-focused interface
 
@@ -26,6 +26,8 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
 - Replit Auth for authentication
 - PostgreSQL database with Drizzle ORM
 - Session management with PostgreSQL storage
+- OpenAI integration for anomaly detection
+- Modular log parser system (extensible for multiple log types)
 - RESTful API design
 
 ### DevOps
@@ -51,6 +53,7 @@ SESSION_SECRET=your-session-secret-key
 REPLIT_DOMAINS=your-replit-domain.com
 ISSUER_URL=https://replit.com/oidc
 REPL_ID=your-repl-id
+OPENAI_API_KEY=your-openai-api-key
 ```
 
 ## Local Development with Docker
@@ -199,6 +202,10 @@ The current test suite includes:
   - Multi-word category handling
   - Response time parsing and validation
   - Data type conversion and schema validation
+- **Generic Parser Factory**: Type validation and routing tests
+  - Log type ID validation
+  - Parser routing logic
+  - Error handling for unsupported formats
 
 #### Test Structure
 ```
@@ -346,7 +353,7 @@ docker logs -f loggenie-app
 ### Log Management Endpoints
 
 - `GET /api/logs` - Get paginated logs with filtering
-- `POST /api/logs/upload` - Upload log files
+- `POST /api/upload` - Upload log files
 - `GET /api/companies` - Get available companies
 - `GET /api/log-types` - Get supported log types
 
@@ -367,7 +374,7 @@ curl -X POST \
   -F "file=@sample.csv" \
   -F "companyId=1" \
   -F "logTypeId=1" \
-  http://localhost:3000/api/logs/upload
+  http://localhost:3000/api/upload
 
 # Get analytics statistics
 curl "http://localhost:3000/api/analytics/stats"
@@ -386,7 +393,7 @@ curl "http://localhost:3000/api/analytics/stats"
 
 ### Sample Data
 
-The application includes 110 sample ZScaler web proxy logs for testing and demonstration purposes.
+The application starts with an empty database. Sample ZScaler logs are available in the `sample_logs/` directory for testing purposes.
 
 ## Security Considerations
 
