@@ -55,6 +55,8 @@ REPL_ID=your-repl-id
 
 ## Local Development with Docker
 
+> **⚠️ Authentication Limitation**: While LogGenie can be built and run with Docker, it currently uses Replit Auth for authentication. This means that Docker deployments outside of Replit will not be able to authenticate users, making the application non-functional for actual use. The application can be migrated to Google OAuth in the future to enable standalone Docker deployments.
+
 ### Quick Start
 
 1. **Clone the repository**
@@ -75,7 +77,7 @@ REPL_ID=your-repl-id
    ```
 
 4. **Access the application**
-   - Application: http://localhost:3000
+   - Application: http://localhost:3000 (authentication will not work outside Replit)
    - Database: PostgreSQL on localhost:5432
 
 ### Docker Setup Options
@@ -239,11 +241,29 @@ npm run db:push
 npm run dev
 ```
 
+### Authentication Considerations
+
+#### Current Limitation
+LogGenie currently uses **Replit Auth** for user authentication, which has the following implications:
+
+- ✅ **Works perfectly** on Replit platform
+- ❌ **Cannot authenticate users** in standalone Docker deployments
+- ❌ **Not suitable** for external hosting without authentication modification
+
+#### Future Migration Option
+The application can be migrated from Replit Auth to **Google OAuth** to enable:
+
+- ✅ Standalone Docker deployments  
+- ✅ External hosting capabilities
+- ✅ Enterprise deployment options
+
+**Migration Effort**: Approximately 6-10 hours of development work to replace authentication provider while maintaining all existing functionality.
+
 ### Production Deployment
 
 #### Environment Configuration
 
-For production deployment, ensure these environment variables are set:
+For production deployment on Replit, ensure these environment variables are set:
 
 ```env
 NODE_ENV=production
