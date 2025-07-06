@@ -198,6 +198,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Fixed critical deployment issues: corrected static file serving path from '/public' to 'dist/public' matching Vite build output
   - Updated port configuration to use environment variables with PORT fallback for deployment flexibility
   - Enhanced error handling with clearer build directory error messages for easier troubleshooting
+  - Implemented ZScaler text log parsing for space-separated log format with multi-word category support
+  - Added comprehensive text file upload functionality handling both simple and complex log entries
+  - Enhanced upload page to support both CSV and TXT formats with automatic parsing detection
 
 ## Changelog
 
