@@ -23,6 +23,25 @@ function loadSystemPrompt(promptFile: string): string {
   }
 }
 
+// Function to load and process template files with variable substitution
+function loadTemplate(templateFile: string, variables: Record<string, any>): string {
+  try {
+    const templatePath = join(process.cwd(), 'prompts', templateFile);
+    let template = readFileSync(templatePath, 'utf-8').trim();
+    
+    // Replace template variables using simple string replacement
+    for (const [key, value] of Object.entries(variables)) {
+      const placeholder = `{{${key}}}`;
+      template = template.replace(new RegExp(placeholder, 'g'), String(value));
+    }
+    
+    return template;
+  } catch (error) {
+    console.error(`Failed to load template file ${templateFile}:`, error);
+    throw new Error(`Could not load template: ${templateFile}`);
+  }
+}
+
 export interface AnomalyDetectionRequest {
   logs: Array<{
     id: number;
@@ -100,45 +119,10 @@ export async function detectAnomalies(request: AnomalyDetectionRequest): Promise
 }
 
 function createAnomalyDetectionPrompt(request: AnomalyDetectionRequest): string {
-  return `
-Analyze the following ${request.logs.length} web proxy logs for cybersecurity anomalies and threats.
-
-Analysis Mode: Detect moderate anomalies and potential security concerns with balanced sensitivity
-Time Range: ${request.timeRange}
-
-Log Data:
-${JSON.stringify(request.logs, null, 2)}
-
-Respond with JSON in this exact format:
-{
-  "anomalies": [
-    {
-      "logIds": [array, of, log, id, numbers],
-      "severity": "low|medium|high|critical",
-      "category": "malware|phishing|data_exfiltration|brute_force|suspicious_traffic|policy_violation|other",
-      "description": "Human-readable description of the anomaly",
-      "indicators": ["list", "of", "specific", "indicators"],
-      "recommendedAction": "Specific action to take",
-      "confidence": number between 0 and 1
-    }
-  ],
-  "summary": {
-    "totalLogsAnalyzed": ${request.logs.length},
-    "anomaliesFound": number,
-    "highestSeverity": "low|medium|high|critical",
-    "commonPatterns": ["array", "of", "common", "patterns", "observed"],
-    "recommendations": ["array", "of", "general", "security", "recommendations"]
-  }
-}
-
-Focus on:
-- Blocked requests (action: "BLOCKED") which may indicate attack attempts
-- Unusual destination URLs or domains
-- Suspicious user agents
-- High-risk categories (malware, phishing sites)
-- Unusual traffic patterns or volumes
-- Geographic or temporal anomalies
-- Protocol or encoding anomalies
-`;
+  return loadTemplate('anomaly-detection-user-template.txt', {
+    logCount: request.logs.length,
+    timeRange: request.timeRange,
+    logData: JSON.stringify(request.logs, null, 2)
+  });
 }
 

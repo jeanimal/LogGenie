@@ -206,6 +206,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Implemented generic log parser factory that validates log types and routes to appropriate parsers
   - Added proper error handling for empty log files and unsupported log types
   - Enhanced upload system with extensible architecture for future log type additions
+  - Refactored OpenAI prompts to use template system with loadTemplate helper function
+  - Extracted anomaly detection user prompt to separate template file for easier maintenance
+  - Implemented simple variable substitution using {{variable}} syntax in prompt templates
 
 ## Changelog
 
