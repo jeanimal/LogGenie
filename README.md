@@ -168,7 +168,7 @@ The application will automatically create the necessary database tables. Docker 
 
 ### Running Tests
 
-The application includes comprehensive unit tests for critical components, particularly the log parsing functionality.
+The application includes initial unit tests for log parsing functionality, with room for expansion to cover additional components.
 
 #### Prerequisites for Testing
 Tests use Vitest framework and are already configured with proper TypeScript support.
