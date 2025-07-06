@@ -6,7 +6,7 @@ import { insertLogUploadSchema, insertZscalerLogSchema, zscalerLogs, logUploads 
 import { db } from "./db";
 import { inArray, eq } from "drizzle-orm";
 import multer from "multer";
-import { parseLogFile } from "./parsers/zscalerParser";
+import { parseLogFile } from "./parsers/logParserFactory";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -130,10 +130,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Process file content
       const fileContent = req.file.buffer.toString('utf-8');
-      const logs = parseLogFile(fileContent, format, parseInt(company));
+      const parseResult = parseLogFile(fileContent, format, parseInt(company), parseInt(logType));
       
       // Create log records
-      const createdLogs = await storage.createZscalerLogs(logs);
+      const createdLogs = await storage.createZscalerLogs(parseResult.logs);
       
       // Update upload record with actual count
       uploadData.recordCount = createdLogs.length;
