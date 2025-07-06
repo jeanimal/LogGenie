@@ -34,7 +34,7 @@ export interface AnomalyDetectionRequest {
     category?: string;
     responseTime?: number;
   }>;
-  sensitivity: 'low' | 'medium' | 'high';
+
   timeRange: string;
   temperature?: number;
   maxTokens?: number;
@@ -100,16 +100,10 @@ export async function detectAnomalies(request: AnomalyDetectionRequest): Promise
 }
 
 function createAnomalyDetectionPrompt(request: AnomalyDetectionRequest): string {
-  const sensitivityMap = {
-    low: "Focus only on clear security threats and obvious anomalies",
-    medium: "Detect moderate anomalies and potential security concerns", 
-    high: "Identify subtle patterns and flag any potentially suspicious activity"
-  };
-
   return `
 Analyze the following ${request.logs.length} web proxy logs for cybersecurity anomalies and threats.
 
-Sensitivity Level: ${request.sensitivity} - ${sensitivityMap[request.sensitivity]}
+Analysis Mode: Detect moderate anomalies and potential security concerns with balanced sensitivity
 Time Range: ${request.timeRange}
 
 Log Data:

@@ -183,7 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Anomaly detection API with OpenAI integration
   app.post("/api/anomalies/detect", isAuthenticated, async (req, res) => {
     try {
-      const { analysisType, sensitivity = 'medium', timeRange = '24h', companyId, temperature = 0.2, maxTokens = 2000 } = req.body;
+      const { analysisType, timeRange = '24h', companyId, temperature = 0.2, maxTokens = 2000 } = req.body;
       
       // Get logs for analysis
       const logOptions = {
@@ -226,7 +226,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: log.category || undefined,
           responseTime: log.responseTime || undefined
         })),
-        sensitivity: sensitivity as 'low' | 'medium' | 'high',
         timeRange,
         temperature: parseFloat(temperature),
         maxTokens: parseInt(maxTokens)
