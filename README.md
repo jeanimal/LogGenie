@@ -150,7 +150,7 @@ OPENAI_API_KEY=your-openai-api-key
 
 #### Option 1: Docker Compose (Recommended)
 
-Create a `docker-compose.yml` file:
+The project includes a `docker-compose.yml` file with the following configuration:
 
 ```yaml
 services:
