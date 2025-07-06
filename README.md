@@ -1,6 +1,6 @@
 # LogGenie - Cybersecurity Log Analysis Platform
 
-LogGenie is a comprehensive web application designed to assist cybersecurity operations analysts in finding potential threats in companies' telemetry logs. The platform provides powerful tools for log upload, analysis, visualization, and AI-powered anomaly detection.
+LogGenie is a web application designed to assist cybersecurity operations analysts in finding potential threats in companies' telemetry logs. The platform provides powerful tools for log upload, analysis, visualization, and AI-powered anomaly detection.
 
 ## Features
 
