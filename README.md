@@ -395,6 +395,77 @@ curl "http://localhost:3000/api/analytics/stats"
 
 The application starts with an empty database. Sample ZScaler logs are available in the `sample_logs/` directory for testing purposes.
 
+## AI-Powered Anomaly Detection
+
+LogGenie includes sophisticated AI-powered anomaly detection using OpenAI's GPT-4o model to identify potential cybersecurity threats in log data.
+
+### How It Works
+
+The anomaly detection system analyzes uploaded logs using advanced language models to identify:
+
+- **Blocked requests** indicating potential attack attempts
+- **Unusual destination URLs** or suspicious domains  
+- **High-risk categories** like malware and phishing sites
+- **Suspicious traffic patterns** and volume anomalies
+- **Geographic and temporal anomalies** in access patterns
+- **Protocol and encoding irregularities**
+
+### Detection Results
+
+Each analysis provides:
+- **Anomaly classifications** with severity levels (low, medium, high, critical)
+- **Threat categories** (malware, phishing, data exfiltration, brute force, etc.)
+- **Specific indicators** explaining why each log entry is suspicious
+- **Recommended actions** for security teams
+- **Confidence scores** for each detected anomaly
+- **Summary insights** with common patterns and overall recommendations
+
+### Prompt Management System
+
+The AI system uses a modular prompt architecture stored in the `/prompts` directory:
+
+- **`anomaly-detection-system.txt`** - Core system prompt defining the AI's role and analysis methodology
+- **`anomaly-detection-user-template.txt`** - User prompt template with variable substitution for dynamic content
+
+### Template Variables
+
+The user prompt template supports dynamic content injection:
+- `{{logCount}}` - Number of logs being analyzed
+- `{{timeRange}}` - Time period for the analysis
+- `{{logData}}` - JSON-formatted log entries
+
+### Configuration
+
+Anomaly detection can be configured with:
+- **Temperature** (0.0-2.0) - Controls AI creativity vs. consistency (default: 0.2 for focused analysis)
+- **Max Tokens** - Response length limit (default: 2000 for comprehensive analysis)
+- **Time Range** - Filter logs by time period (24h, 7d, 30d, or all)
+- **Company Filter** - Analyze logs from specific organizations
+
+### API Usage
+
+```bash
+# Detect anomalies in recent logs
+curl -X POST http://localhost:3000/api/anomalies/detect \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timeRange": "24h",
+    "companyId": 1,
+    "temperature": 0.2,
+    "maxTokens": 2000
+  }'
+```
+
+### Customizing AI Analysis
+
+To modify the analysis behavior:
+
+1. **Edit system prompt** - Modify `/prompts/anomaly-detection-system.txt` to change the AI's analytical approach
+2. **Update user template** - Modify `/prompts/anomaly-detection-user-template.txt` to change the analysis instructions
+3. **Add template variables** - Extend the `loadTemplate()` function in `server/openai.ts` for new dynamic content
+
+The template system allows non-technical users to modify AI behavior without touching application code.
+
 ## Security Considerations
 
 - All routes require authentication except landing page
