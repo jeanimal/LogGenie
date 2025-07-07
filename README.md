@@ -301,8 +301,6 @@ The application can be migrated from Replit Auth to **Google OAuth** to enable:
 - ✅ External hosting capabilities
 - ✅ Enterprise deployment options
 
-**Migration Effort**: Approximately 6-10 hours of development work to replace authentication provider while maintaining all existing functionality.
-
 ### Production Deployment
 
 #### Environment Configuration
