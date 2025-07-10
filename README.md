@@ -117,9 +117,6 @@ REPLIT_DOMAINS=your-replit-domain.com
 ISSUER_URL=https://replit.com/oidc
 REPL_ID=your-repl-id
 OPENAI_API_KEY=your-openai-api-key
-
-# Mock Authentication (for Docker development only)
-MOCK_AUTH=false
 ```
 
 ## Local Development with Docker
@@ -290,70 +287,12 @@ npm run dev
 
 ### Authentication Considerations
 
-#### Production Authentication
-LogGenie uses **Replit Auth** for production authentication on the Replit platform:
+#### Current Limitation
+LogGenie currently uses **Replit Auth** for user authentication, which has the following implications:
 
 - ✅ **Works perfectly** on Replit platform
-- ✅ **Secure OAuth flow** with session management
-- ✅ **Automatic user provisioning** and profile management
-
-#### Docker Development Authentication
-For Docker development, LogGenie includes **secure mock authentication**:
-
-- ✅ **Mock authentication** bypasses Replit Auth when `MOCK_AUTH=true`
-- ✅ **Development-only** - only works when `NODE_ENV=development`
-- ✅ **Automatic user creation** - creates "Docker Developer" test user
-- ✅ **Full functionality** - all features work identically to production
-
-#### Security Design
-The authentication system is designed with multiple safety layers:
-
-- **Environment isolation** - Mock auth only activates in development mode
-- **Double condition check** - Requires both `NODE_ENV=development` AND `MOCK_AUTH=true`
-- **Production protection** - Replit production never sets `MOCK_AUTH=true`
-- **Clear logging** - Authentication mode is logged on startup
-
-#### Docker Usage
-To enable mock authentication for Docker development:
-
-```bash
-# Set environment variables in docker-compose.yml
-NODE_ENV=development
-MOCK_AUTH=true
-
-# Then access /api/login to automatically authenticate as test user
-```
-
-#### Docker Troubleshooting
-If you see the login screen when using Docker:
-
-1. **Check Environment Variables**: Ensure `MOCK_AUTH=true` is set in `docker-compose.yml`
-2. **Verify Logs**: Check Docker logs with `docker compose logs app | grep AUTH`
-   - Should show: `[AUTH DEBUG] NODE_ENV: development, MOCK_AUTH: true, USE_MOCK_AUTH: true`
-   - Should show: `[MOCK AUTH] Using mock authentication for Docker development`
-3. **Manual Authentication**: Click "Sign in with Authentication" button to trigger mock login
-4. **Direct Login**: Visit `http://localhost:3000/api/login` directly in your browser
-5. **Container Restart**: If needed, restart with `docker compose restart app`
-
-**Expected Docker Behavior:**
-- Login screen appears initially (normal)
-- Clicking "Sign in with Authentication" redirects to dashboard
-- No real credentials required
-- Creates test user: "Docker Developer" (docker-dev@example.com)
-
-**If Mock Auth is Not Working:**
-- Check logs show `MOCK_AUTH: undefined` → Environment variable not set
-- Ensure `docker-compose.yml` has `MOCK_AUTH=true` under `environment` section
-- Restart Docker containers: `docker compose down && docker compose up -d`
-
-
-
-**Common Issues Fixed:**
-- ✅ Session cookies now work with HTTP (Docker development)
-- ✅ Mock authentication user structure matches API endpoints
-- ✅ File upload functionality works with both authentication methods
-- ✅ Debug logging helps identify authentication flow issues
-- ✅ Compatible with both development and production environments
+- ❌ **Cannot authenticate users** in standalone Docker deployments
+- ❌ **Not suitable** for external hosting without authentication modification
 
 #### Future Migration Option
 The application can be migrated from Replit Auth to **Google OAuth** to enable:
@@ -361,6 +300,8 @@ The application can be migrated from Replit Auth to **Google OAuth** to enable:
 - ✅ Standalone Docker deployments  
 - ✅ External hosting capabilities
 - ✅ Enterprise deployment options
+
+**Migration Effort**: Approximately 6-10 hours of development work to replace authentication provider while maintaining all existing functionality.
 
 ### Production Deployment
 

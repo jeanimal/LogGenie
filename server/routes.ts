@@ -40,18 +40,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      // Handle both Replit Auth and Mock Auth user structures
-      const userId = req.user.claims?.sub || req.user.id;
-      console.log("[AUTH USER] Fetching user for ID:", userId);
-      console.log("[AUTH USER] User object:", JSON.stringify(req.user, null, 2));
-      
+      const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
-      if (!user) {
-        console.log("[AUTH USER] User not found in database for ID:", userId);
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      console.log("[AUTH USER] Successfully fetched user:", user.email);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -125,8 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { company, logType, format } = req.body;
-      const userId = req.user.claims?.sub || req.user.id;
-      console.log("[UPLOAD DEBUG] User ID:", userId, "Auth method:", req.user.claims ? "Replit" : "Mock");
+      const userId = req.user.claims.sub;
 
       // Parse and validate upload data
       const uploadData = insertLogUploadSchema.parse({

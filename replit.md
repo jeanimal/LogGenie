@@ -209,16 +209,6 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Refactored OpenAI prompts to use template system with loadTemplate helper function
   - Extracted anomaly detection user prompt to separate template file for easier maintenance
   - Implemented simple variable substitution using {{variable}} syntax in prompt templates
-  - Added secure mock authentication system for Docker development with dual-environment safety checks
-  - Mock authentication only activates when NODE_ENV=development AND MOCK_AUTH=true for production security
-  - Updated Docker configuration to enable standalone development deployment with full authentication bypass
-  - Enhanced README with comprehensive authentication documentation covering both production and development modes
-  - Fixed critical Docker authentication issues: session cookies now work with HTTP, user structure compatibility resolved
-  - Added comprehensive debug logging to track authentication flow and troubleshoot Docker deployment issues
-  - Created verification scripts and troubleshooting guides for Docker development setup
-  - Fixed Docker database schema mismatch by updating init.sql to match current Drizzle schema
-  - Created docker-migration.sql script to update existing Docker databases with correct table structure
-  - Resolved file upload errors caused by missing user_id column in Docker zscaler_logs table
 
 ## Changelog
 

@@ -29,7 +29,7 @@ export default function Landing() {
                   onClick={handleLogin}
                   className="w-full bg-primary hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2"
                 >
-                  <span>Sign in with Authentication</span>
+                  <span>Sign in with Replit Auth</span>
                 </Button>
               </div>
             </div>
