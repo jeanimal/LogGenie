@@ -348,7 +348,8 @@ If you see the login screen when using Docker:
 
 **Common Issues Fixed:**
 - ✅ Session cookies now work with HTTP (Docker development)
-- ✅ Mock authentication user structure matches API expectations
+- ✅ Mock authentication user structure matches API endpoints
+- ✅ File upload functionality works with both authentication methods
 - ✅ Debug logging helps identify authentication flow issues
 - ✅ Compatible with both development and production environments
 

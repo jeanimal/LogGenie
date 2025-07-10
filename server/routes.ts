@@ -125,7 +125,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { company, logType, format } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.user.claims?.sub || req.user.id;
+      console.log("[UPLOAD DEBUG] User ID:", userId, "Auth method:", req.user.claims ? "Replit" : "Mock");
 
       // Parse and validate upload data
       const uploadData = insertLogUploadSchema.parse({
