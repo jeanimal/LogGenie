@@ -35,17 +35,20 @@ export function getSession() {
     ttl: sessionTtl,
     tableName: "sessions",
   });
-  return session({
+  const sessionConfig = {
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: !USE_MOCK_AUTH, // Allow HTTP cookies for Docker development
       maxAge: sessionTtl,
     },
-  });
+  };
+  
+  console.log(`[SESSION DEBUG] Cookie secure setting: ${sessionConfig.cookie.secure}, Mock auth: ${USE_MOCK_AUTH}`);
+  return session(sessionConfig);
 }
 
 function updateUserSession(
@@ -91,6 +94,7 @@ function setupMockAuth(app: Express) {
   // Mock login endpoint
   app.get("/api/login", async (req, res) => {
     try {
+      console.log("[MOCK AUTH] Login attempt - Session ID:", req.sessionID);
       const mockUser = await createMockUser();
       
       // Use passport.authenticate for proper session handling
@@ -112,7 +116,8 @@ function setupMockAuth(app: Express) {
           console.error("[MOCK AUTH] Error during session creation:", err);
           return res.status(500).json({ message: "Mock authentication failed" });
         }
-        console.log("[MOCK AUTH] Successfully authenticated mock user");
+        console.log("[MOCK AUTH] Successfully authenticated mock user, redirecting to /");
+        console.log("[MOCK AUTH] Session authenticated:", req.isAuthenticated());
         res.redirect("/");
       });
     } catch (error) {

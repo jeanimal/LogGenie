@@ -346,6 +346,12 @@ If you see the login screen when using Docker:
 - Ensure `docker-compose.yml` has `MOCK_AUTH=true` under `environment` section
 - Restart Docker containers: `docker compose down && docker compose up -d`
 
+**Common Issues Fixed:**
+- ✅ Session cookies now work with HTTP (Docker development)
+- ✅ Mock authentication user structure matches API expectations
+- ✅ Debug logging helps identify authentication flow issues
+- ✅ Compatible with both development and production environments
+
 #### Future Migration Option
 The application can be migrated from Replit Auth to **Google OAuth** to enable:
 
