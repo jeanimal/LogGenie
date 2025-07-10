@@ -10,6 +10,7 @@ import { storage } from "./storage";
 
 // Check if we should use mock authentication for Docker development
 const USE_MOCK_AUTH = process.env.NODE_ENV === 'development' && process.env.MOCK_AUTH === 'true';
+console.log(`[AUTH DEBUG] NODE_ENV: ${process.env.NODE_ENV}, MOCK_AUTH: ${process.env.MOCK_AUTH}, USE_MOCK_AUTH: ${USE_MOCK_AUTH}`);
 
 if (!USE_MOCK_AUTH && !process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
@@ -91,7 +92,13 @@ function setupMockAuth(app: Express) {
   app.get("/api/login", async (req, res) => {
     try {
       const mockUser = await createMockUser();
+      
+      // Use passport.authenticate for proper session handling
       req.logIn({ 
+        id: mockUser.id,
+        email: mockUser.email,
+        firstName: mockUser.firstName,
+        lastName: mockUser.lastName,
         claims: { 
           sub: mockUser.id,
           email: mockUser.email,
@@ -100,7 +107,12 @@ function setupMockAuth(app: Express) {
           exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
         },
         expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60)
-      }, () => {
+      }, (err) => {
+        if (err) {
+          console.error("[MOCK AUTH] Error during session creation:", err);
+          return res.status(500).json({ message: "Mock authentication failed" });
+        }
+        console.log("[MOCK AUTH] Successfully authenticated mock user");
         res.redirect("/");
       });
     } catch (error) {
@@ -117,6 +129,7 @@ function setupMockAuth(app: Express) {
   // Mock logout endpoint
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
+      console.log("[MOCK AUTH] User logged out");
       res.redirect("/");
     });
   });

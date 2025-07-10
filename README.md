@@ -324,6 +324,28 @@ MOCK_AUTH=true
 # Then access /api/login to automatically authenticate as test user
 ```
 
+#### Docker Troubleshooting
+If you see the login screen when using Docker:
+
+1. **Check Environment Variables**: Ensure `MOCK_AUTH=true` is set in `docker-compose.yml`
+2. **Verify Logs**: Check Docker logs with `docker compose logs app | grep AUTH`
+   - Should show: `[AUTH DEBUG] NODE_ENV: development, MOCK_AUTH: true, USE_MOCK_AUTH: true`
+   - Should show: `[MOCK AUTH] Using mock authentication for Docker development`
+3. **Manual Authentication**: Click "Sign in with Authentication" button to trigger mock login
+4. **Direct Login**: Visit `http://localhost:3000/api/login` directly in your browser
+5. **Container Restart**: If needed, restart with `docker compose restart app`
+
+**Expected Docker Behavior:**
+- Login screen appears initially (normal)
+- Clicking "Sign in with Authentication" redirects to dashboard
+- No real credentials required
+- Creates test user: "Docker Developer" (docker-dev@example.com)
+
+**If Mock Auth is Not Working:**
+- Check logs show `MOCK_AUTH: undefined` → Environment variable not set
+- Ensure `docker-compose.yml` has `MOCK_AUTH=true` under `environment` section
+- Restart Docker containers: `docker compose down && docker compose up -d`
+
 #### Future Migration Option
 The application can be migrated from Replit Auth to **Google OAuth** to enable:
 
