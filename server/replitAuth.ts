@@ -8,7 +8,10 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
-if (!process.env.REPLIT_DOMAINS) {
+// Check if we should use mock authentication for Docker development
+const USE_MOCK_AUTH = process.env.NODE_ENV === 'development' && process.env.MOCK_AUTH === 'true';
+
+if (!USE_MOCK_AUTH && !process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
 
@@ -66,12 +69,76 @@ async function upsertUser(
   });
 }
 
+// Mock authentication functions for Docker development
+async function createMockUser() {
+  const mockUserData = {
+    id: "mock-user-docker-dev",
+    email: "docker-dev@example.com",
+    firstName: "Docker",
+    lastName: "Developer",
+    profileImageUrl: null,
+  };
+  
+  console.log("[MOCK AUTH] Creating/updating mock user for Docker development");
+  await storage.upsertUser(mockUserData);
+  return mockUserData;
+}
+
+function setupMockAuth(app: Express) {
+  console.log("[MOCK AUTH] Setting up mock authentication for Docker development");
+  
+  // Mock login endpoint
+  app.get("/api/login", async (req, res) => {
+    try {
+      const mockUser = await createMockUser();
+      req.logIn({ 
+        claims: { 
+          sub: mockUser.id,
+          email: mockUser.email,
+          first_name: mockUser.firstName,
+          last_name: mockUser.lastName,
+          exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
+        },
+        expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60)
+      }, () => {
+        res.redirect("/");
+      });
+    } catch (error) {
+      console.error("[MOCK AUTH] Error during mock login:", error);
+      res.status(500).json({ message: "Mock authentication failed" });
+    }
+  });
+
+  // Mock callback endpoint (for compatibility)
+  app.get("/api/callback", (req, res) => {
+    res.redirect("/api/login");
+  });
+
+  // Mock logout endpoint
+  app.get("/api/logout", (req, res) => {
+    req.logout(() => {
+      res.redirect("/");
+    });
+  });
+}
+
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Use mock authentication for Docker development
+  if (USE_MOCK_AUTH) {
+    console.log("[MOCK AUTH] Using mock authentication for Docker development");
+    passport.serializeUser((user: Express.User, cb) => cb(null, user));
+    passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+    setupMockAuth(app);
+    return;
+  }
+
+  // Use real Replit Auth for production
+  console.log("[REPLIT AUTH] Using Replit authentication for production");
   const config = await getOidcConfig();
 
   const verify: VerifyFunction = async (
@@ -130,7 +197,17 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  // For mock authentication, just check if user is authenticated
+  if (USE_MOCK_AUTH) {
+    return next();
+  }
+
+  // For real Replit Auth, check token expiration and refresh if needed
+  if (!user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 

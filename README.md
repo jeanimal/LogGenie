@@ -117,6 +117,9 @@ REPLIT_DOMAINS=your-replit-domain.com
 ISSUER_URL=https://replit.com/oidc
 REPL_ID=your-repl-id
 OPENAI_API_KEY=your-openai-api-key
+
+# Mock Authentication (for Docker development only)
+MOCK_AUTH=false
 ```
 
 ## Local Development with Docker
@@ -287,12 +290,39 @@ npm run dev
 
 ### Authentication Considerations
 
-#### Current Limitation
-LogGenie currently uses **Replit Auth** for user authentication, which has the following implications:
+#### Production Authentication
+LogGenie uses **Replit Auth** for production authentication on the Replit platform:
 
 - ✅ **Works perfectly** on Replit platform
-- ❌ **Cannot authenticate users** in standalone Docker deployments
-- ❌ **Not suitable** for external hosting without authentication modification
+- ✅ **Secure OAuth flow** with session management
+- ✅ **Automatic user provisioning** and profile management
+
+#### Docker Development Authentication
+For Docker development, LogGenie includes **secure mock authentication**:
+
+- ✅ **Mock authentication** bypasses Replit Auth when `MOCK_AUTH=true`
+- ✅ **Development-only** - only works when `NODE_ENV=development`
+- ✅ **Automatic user creation** - creates "Docker Developer" test user
+- ✅ **Full functionality** - all features work identically to production
+
+#### Security Design
+The authentication system is designed with multiple safety layers:
+
+- **Environment isolation** - Mock auth only activates in development mode
+- **Double condition check** - Requires both `NODE_ENV=development` AND `MOCK_AUTH=true`
+- **Production protection** - Replit production never sets `MOCK_AUTH=true`
+- **Clear logging** - Authentication mode is logged on startup
+
+#### Docker Usage
+To enable mock authentication for Docker development:
+
+```bash
+# Set environment variables in docker-compose.yml
+NODE_ENV=development
+MOCK_AUTH=true
+
+# Then access /api/login to automatically authenticate as test user
+```
 
 #### Future Migration Option
 The application can be migrated from Replit Auth to **Google OAuth** to enable:
