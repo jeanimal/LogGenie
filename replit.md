@@ -216,6 +216,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Fixed critical Docker authentication issues: session cookies now work with HTTP, user structure compatibility resolved
   - Added comprehensive debug logging to track authentication flow and troubleshoot Docker deployment issues
   - Created verification scripts and troubleshooting guides for Docker development setup
+  - Fixed Docker database schema mismatch by updating init.sql to match current Drizzle schema
+  - Created docker-migration.sql script to update existing Docker databases with correct table structure
+  - Resolved file upload errors caused by missing user_id column in Docker zscaler_logs table
 
 ## Changelog
 
