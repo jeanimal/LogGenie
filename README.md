@@ -346,10 +346,7 @@ If you see the login screen when using Docker:
 - Ensure `docker-compose.yml` has `MOCK_AUTH=true` under `environment` section
 - Restart Docker containers: `docker compose down && docker compose up -d`
 
-**If File Upload Fails with "column user_id does not exist":**
-- This indicates outdated database schema in Docker
-- Apply database migration: `docker compose exec db psql -U postgres -d loggenie -f /docker-entrypoint-initdb.d/docker-migration.sql`
-- Or recreate containers: `docker compose down -v && docker compose up -d`
+
 
 **Common Issues Fixed:**
 - ✅ Session cookies now work with HTTP (Docker development)
