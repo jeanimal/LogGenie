@@ -199,7 +199,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       };
       
+      console.log(`[DEBUG] Log query options:`, {
+        ...logOptions,
+        startDate: logOptions.startDate?.toISOString(),
+        endDate: logOptions.endDate?.toISOString()
+      });
+      
       const { logs } = await storage.getZscalerLogs(logOptions);
+      console.log(`[DEBUG] Retrieved ${logs.length} logs from database`);
       
       if (logs.length === 0) {
         return res.json({

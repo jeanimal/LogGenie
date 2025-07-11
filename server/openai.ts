@@ -93,7 +93,11 @@ export async function detectAnomalies(request: AnomalyDetectionRequest): Promise
     const prompt = createAnomalyDetectionPrompt(request);
     const systemPrompt = loadSystemPrompt('anomaly-detection-system.txt');
     
-    console.log(`[OPENAI] Sending request to OpenAI with ${prompt.length} chars in prompt`);
+    console.log(`[OPENAI] Full templated prompt being sent to OpenAI:`);
+    console.log("=== PROMPT START ===");
+    console.log(prompt);
+    console.log("=== PROMPT END ===");
+    console.log(`[OPENAI] Prompt length: ${prompt.length} chars`);
     
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
