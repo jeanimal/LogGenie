@@ -215,6 +215,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use OpenAI for actual anomaly detection
       const { detectAnomalies } = await import('./openai');
       
+      console.log(`[ANOMALY DETECTION] Analyzing ${logs.length} logs for company ${companyId || 'all'}`);
+      console.log(`[ANOMALY DETECTION] Sample log entries:`, logs.slice(0, 3).map(l => ({ 
+        id: l.id, 
+        url: l.destinationUrl, 
+        action: l.action, 
+        category: l.category 
+      })));
+
       const result = await detectAnomalies({
         logs: logs.map(log => ({
           id: log.id,
@@ -230,6 +238,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         temperature: parseFloat(temperature),
         maxTokens: parseInt(maxTokens)
       });
+
+      console.log(`[ANOMALY DETECTION] Result: ${result.anomalies.length} anomalies found`);
 
       res.json(result);
     } catch (error) {

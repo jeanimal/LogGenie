@@ -113,7 +113,12 @@ export async function detectAnomalies(request: AnomalyDetectionRequest): Promise
       }
     };
   } catch (error) {
-    console.error("OpenAI API error:", error);
+    console.error("OpenAI API error details:", {
+      message: (error as Error).message,
+      status: (error as any)?.status,
+      type: (error as any)?.type,
+      code: (error as any)?.code
+    });
     throw new Error("Failed to analyze logs for anomalies: " + (error as Error).message);
   }
 }
