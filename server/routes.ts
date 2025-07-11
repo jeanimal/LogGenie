@@ -188,7 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get logs for analysis
       const logOptions = {
         page: 1,
-        limit: analysisType === 'sample' ? 50 : 500, // Limit for cost control
+        limit: analysisType === 'sample' ? 50 : 200, // Analyze all available logs
         companyId: companyId ? parseInt(companyId) : undefined,
         // Add time range filtering if needed
         ...(timeRange && timeRange !== 'all' && {
@@ -216,12 +216,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { detectAnomalies } = await import('./openai');
       
       console.log(`[ANOMALY DETECTION] Analyzing ${logs.length} logs for company ${companyId || 'all'}`);
-      console.log(`[ANOMALY DETECTION] Sample log entries:`, logs.slice(0, 3).map(l => ({ 
-        id: l.id, 
-        url: l.destinationUrl, 
-        action: l.action, 
-        category: l.category 
-      })));
+      
+      // Log suspicious entries to verify they're being analyzed
+      const suspiciousLogs = logs.filter(l => 
+        l.destinationUrl.includes('malicious') || 
+        (l.action === 'ALLOW' && (l.category === 'Malware' || l.category === 'Phishing'))
+      );
+      console.log(`[ANOMALY DETECTION] Found ${suspiciousLogs.length} obviously suspicious logs:`, 
+        suspiciousLogs.slice(0, 5).map(l => ({ 
+          id: l.id, 
+          url: l.destinationUrl, 
+          action: l.action, 
+          category: l.category 
+        })));
 
       const result = await detectAnomalies({
         logs: logs.map(log => ({
