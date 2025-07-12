@@ -209,6 +209,10 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Refactored OpenAI prompts to use template system with loadTemplate helper function
   - Extracted anomaly detection user prompt to separate template file for easier maintenance
   - Implemented simple variable substitution using {{variable}} syntax in prompt templates
+  - Updated anomaly detection page to use same timeline filter as view-logs page with dual-handle sliders
+  - Replaced time range dropdown with company selector and timeline date range selection
+  - Fixed backend API to accept startDate/endDate parameters instead of relative time strings
+  - Resolved React variable hoisting error with timelineData initialization order
 
 ## Changelog
 

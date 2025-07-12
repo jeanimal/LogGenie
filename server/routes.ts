@@ -234,7 +234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: log.category || undefined,
           responseTime: log.responseTime || undefined
         })),
-        timeRange,
+        timeRange: startDate && endDate ? `${startDate} to ${endDate}` : 'all available logs',
         temperature: parseFloat(temperature),
         maxTokens: parseInt(maxTokens)
       });

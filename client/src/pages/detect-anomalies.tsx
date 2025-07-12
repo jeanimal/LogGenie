@@ -112,6 +112,18 @@ export default function DetectAnomalies() {
     }
   };
 
+  // Query for companies
+  const { data: companies } = useQuery({
+    queryKey: ["/api/companies"],
+    enabled: isAuthenticated,
+  });
+
+  // Query for timeline data
+  const { data: timelineData } = useQuery({
+    queryKey: ["/api/logs/timeline-range", companyFilter === "all" ? "" : companyFilter],
+    enabled: isAuthenticated,
+  });
+
   // Timeline helper functions
   const getTimelineRange = () => {
     const data = timelineData as any;
@@ -146,18 +158,6 @@ export default function DetectAnomalies() {
   useEffect(() => {
     updateDateRange(timelineRange);
   }, [timelineRange, timelineData]);
-
-  // Query for companies
-  const { data: companies } = useQuery({
-    queryKey: ["/api/companies"],
-    enabled: isAuthenticated,
-  });
-
-  // Query for timeline data
-  const { data: timelineData } = useQuery({
-    queryKey: ["/api/logs/timeline-range", companyFilter === "all" ? "" : companyFilter],
-    enabled: isAuthenticated,
-  });
 
   const updateSortCriterion = (index: number, field: string, order: string) => {
     const newCriteria = [...sortCriteria];
