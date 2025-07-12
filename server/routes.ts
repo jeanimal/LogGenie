@@ -183,14 +183,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Anomaly detection API with OpenAI integration
   app.post("/api/anomalies/detect", isAuthenticated, async (req, res) => {
     try {
-      console.log("[DEBUG] Anomaly detection endpoint hit");
       const { analysisType, timeRange = '24h', companyId, temperature = 0.2, maxTokens = 2000 } = req.body;
-      console.log("[DEBUG] Request params:", { analysisType, timeRange, companyId, temperature, maxTokens });
       
       // Get logs for analysis
       const logOptions = {
         page: 1,
-        limit: analysisType === 'sample' ? 50 : 200, // Analyze all available logs
+        limit: analysisType === 'sample' ? 50 : 500, // Limit for cost control
         companyId: companyId ? parseInt(companyId) : undefined,
         // Add time range filtering if needed
         ...(timeRange && timeRange !== 'all' && {
@@ -199,14 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       };
       
-      console.log(`[DEBUG] Log query options:`, {
-        ...logOptions,
-        startDate: logOptions.startDate?.toISOString(),
-        endDate: logOptions.endDate?.toISOString()
-      });
-      
       const { logs } = await storage.getZscalerLogs(logOptions);
-      console.log(`[DEBUG] Retrieved ${logs.length} logs from database`);
       
       if (logs.length === 0) {
         return res.json({
@@ -225,19 +216,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { detectAnomalies } = await import('./openai');
       
       console.log(`[ANOMALY DETECTION] Analyzing ${logs.length} logs for company ${companyId || 'all'}`);
-      
-      // Log suspicious entries to verify they're being analyzed
-      const suspiciousLogs = logs.filter(l => 
-        l.destinationUrl.includes('malicious') || 
-        (l.action === 'ALLOW' && (l.category === 'Malware' || l.category === 'Phishing'))
-      );
-      console.log(`[ANOMALY DETECTION] Found ${suspiciousLogs.length} obviously suspicious logs:`, 
-        suspiciousLogs.slice(0, 5).map(l => ({ 
-          id: l.id, 
-          url: l.destinationUrl, 
-          action: l.action, 
-          category: l.category 
-        })));
+      console.log(`[ANOMALY DETECTION] Sample log entries:`, logs.slice(0, 3).map(l => ({ 
+        id: l.id, 
+        url: l.destinationUrl, 
+        action: l.action, 
+        category: l.category 
+      })));
 
       const result = await detectAnomalies({
         logs: logs.map(log => ({

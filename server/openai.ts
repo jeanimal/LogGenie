@@ -80,24 +80,8 @@ export interface AnomalyDetectionResult {
 
 export async function detectAnomalies(request: AnomalyDetectionRequest): Promise<AnomalyDetectionResult> {
   try {
-    console.log(`[OPENAI] Starting anomaly detection for ${request.logs.length} logs`);
-    
-    // Log some suspicious entries to verify data
-    const suspiciousLogs = request.logs.filter(log => 
-      log.destinationUrl.includes('malicious') || 
-      (log.action === 'ALLOW' && log.destinationUrl.includes('phishing'))
-    );
-    console.log(`[OPENAI] Found ${suspiciousLogs.length} obviously malicious entries:`, 
-      suspiciousLogs.slice(0, 3).map(l => ({ id: l.id, url: l.destinationUrl, action: l.action })));
-
     const prompt = createAnomalyDetectionPrompt(request);
     const systemPrompt = loadSystemPrompt('anomaly-detection-system.txt');
-    
-    console.log(`[OPENAI] Full templated prompt being sent to OpenAI:`);
-    console.log("=== PROMPT START ===");
-    console.log(prompt);
-    console.log("=== PROMPT END ===");
-    console.log(`[OPENAI] Prompt length: ${prompt.length} chars`);
     
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -116,11 +100,7 @@ export async function detectAnomalies(request: AnomalyDetectionRequest): Promise
       max_tokens: request.maxTokens ?? 2000
     });
 
-    const content = response.choices[0].message.content || '{}';
-    console.log(`[OPENAI] Response received (${content.length} chars):`, content.substring(0, 200) + '...');
-    
-    const result = JSON.parse(content);
-    console.log(`[OPENAI] Parsed result: ${result.anomalies?.length || 0} anomalies found`);
+    const result = JSON.parse(response.choices[0].message.content || '{}');
     
     return {
       anomalies: result.anomalies || [],

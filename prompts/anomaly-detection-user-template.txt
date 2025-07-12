@@ -29,17 +29,10 @@ Respond with JSON in this exact format:
 }
 
 Focus on:
-- Blocked requests (action: "BLOCK") which may indicate attack attempts
-- Allowed requests to malicious domains (action: "ALLOW" with suspicious URLs)
-- Unusual destination URLs or domains (especially containing "malicious", "phishing", "fraud")
-- Category mismatches (legitimate URLs categorized as malware/phishing)
+- Blocked requests (action: "BLOCKED") which may indicate attack attempts
+- Unusual destination URLs or domains
+- Suspicious user agents
 - High-risk categories (malware, phishing sites)
-- Suspicious access patterns and user behavior
 - Unusual traffic patterns or volumes
 - Geographic or temporal anomalies
 - Protocol or encoding anomalies
-
-Pay special attention to:
-- ANY request to URLs containing "malicious" regardless of action
-- Requests with ALLOW action to obviously dangerous domains
-- Category inconsistencies that suggest data corruption or evasion
