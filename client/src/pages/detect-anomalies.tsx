@@ -1027,88 +1027,50 @@ export default function DetectAnomalies() {
                                 </div>
 
                                 {logDetails.has(originalIndex) ? (
-                                  <div className="space-y-3">
-                                    {logDetails
-                                      .get(originalIndex)
-                                      ?.map((log: any, logIndex: number) => (
-                                        <div
-                                          key={logIndex}
-                                          className="bg-gray-50 rounded-md p-3 text-sm font-mono"
-                                        >
-                                          <div className="grid grid-cols-2 gap-2 text-xs">
-                                            <div>
-                                              <span className="font-semibold">
-                                                Timestamp:
-                                              </span>{" "}
-                                              {new Date(
-                                                log.timestamp,
-                                              ).toLocaleString()}
-                                            </div>
-                                            <div>
-                                              <span className="font-semibold">
-                                                Source IP:
-                                              </span>{" "}
-                                              {log.sourceIp}
-                                            </div>
-                                            <div className="col-span-2">
-                                              <span className="font-semibold">
-                                                URL:
-                                              </span>{" "}
-                                              {log.destinationUrl}
-                                            </div>
-                                            <div>
-                                              <span className="font-semibold">
-                                                Action:
-                                              </span>{" "}
-                                              {log.action}
-                                            </div>
-                                            <div>
-                                              <span className="font-semibold">
-                                                Risk Level:
-                                              </span>
-                                              <span
-                                                className={`ml-1 px-2 py-1 rounded text-xs ${
-                                                  log.riskLevel === "high"
-                                                    ? "bg-red-100 text-red-800"
-                                                    : log.riskLevel === "medium"
-                                                      ? "bg-yellow-100 text-yellow-800"
-                                                      : "bg-green-100 text-green-800"
-                                                }`}
-                                              >
-                                                {log.riskLevel}
-                                              </span>
-                                            </div>
-                                            {log.responseCode && (
-                                              <div>
-                                                <span className="font-semibold">
-                                                  Response Code:
-                                                </span>{" "}
-                                                {log.responseCode}
-                                              </div>
-                                            )}
-                                            {log.category && (
-                                              <div>
-                                                <span className="font-semibold">
-                                                  Category:
-                                                </span>{" "}
-                                                {log.category}
-                                              </div>
-                                            )}
-                                            {log.userAgent && (
-                                              <div className="col-span-2">
-                                                <span className="font-semibold">
-                                                  User Agent:
-                                                </span>{" "}
-                                                {log.userAgent.substring(
-                                                  0,
-                                                  100,
-                                                )}
-                                                ...
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      ))}
+                                  <div className="overflow-x-auto">
+                                    <table className="min-w-full text-sm border border-gray-200 rounded-lg">
+                                      <thead className="bg-gray-100">
+                                        <tr>
+                                          <th className="px-3 py-2 text-left font-medium text-gray-700 border-b">ID</th>
+                                          <th className="px-3 py-2 text-left font-medium text-gray-700 border-b">Timestamp</th>
+                                          <th className="px-3 py-2 text-left font-medium text-gray-700 border-b">Source IP</th>
+                                          <th className="px-3 py-2 text-left font-medium text-gray-700 border-b">User ID</th>
+                                          <th className="px-3 py-2 text-left font-medium text-gray-700 border-b">Destination URL</th>
+                                          <th className="px-3 py-2 text-left font-medium text-gray-700 border-b">Action</th>
+                                          <th className="px-3 py-2 text-left font-medium text-gray-700 border-b">Category</th>
+                                          <th className="px-3 py-2 text-left font-medium text-gray-700 border-b">Response Time</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {logDetails
+                                          .get(originalIndex)
+                                          ?.map((log: any, logIndex: number) => (
+                                            <tr key={logIndex} className="border-b hover:bg-gray-50">
+                                              <td className="px-3 py-2 font-mono text-xs text-gray-600">{log.id}</td>
+                                              <td className="px-3 py-2 font-mono text-xs">
+                                                {new Date(log.timestamp).toLocaleString()}
+                                              </td>
+                                              <td className="px-3 py-2 font-mono text-xs">{log.sourceIp}</td>
+                                              <td className="px-3 py-2 font-mono text-xs font-medium text-blue-600">{log.userId}</td>
+                                              <td className="px-3 py-2 font-mono text-xs max-w-xs truncate" title={log.destinationUrl}>
+                                                {log.destinationUrl}
+                                              </td>
+                                              <td className="px-3 py-2">
+                                                <Badge 
+                                                  variant={log.action === 'ALLOW' ? 'default' : log.action === 'BLOCK' ? 'destructive' : 'secondary'}
+                                                  className="text-xs"
+                                                >
+                                                  {log.action}
+                                                </Badge>
+                                              </td>
+                                              <td className="px-3 py-2 text-xs">{log.category || 'N/A'}</td>
+                                              <td className="px-3 py-2 font-mono text-xs">
+                                                {log.responseTime ? `${log.responseTime}ms` : 'N/A'}
+                                              </td>
+                                            </tr>
+                                          ))}
+                                      </tbody>
+                                    </table>
                                   </div>
                                 ) : (
                                   !fetchLogsMutation.isPending && (
