@@ -31,7 +31,7 @@ export default function DetectAnomalies() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
 
-  const [timeRange, setTimeRange] = useState("7d");
+  const [timeRange, setTimeRange] = useState("all");
   const [anomalies, setAnomalies] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [dismissedAnomalies, setDismissedAnomalies] = useState<Set<number>>(
