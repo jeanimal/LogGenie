@@ -1051,7 +1051,7 @@ export default function DetectAnomalies() {
                                                 {new Date(log.timestamp).toLocaleString()}
                                               </td>
                                               <td className="px-3 py-2 font-mono text-xs">{log.sourceIp}</td>
-                                              <td className="px-3 py-2 font-mono text-xs font-medium text-blue-600">{log.userId}</td>
+                                              <td className="px-3 py-2 font-mono text-xs font-medium text-gray-700">{log.userId}</td>
                                               <td className="px-3 py-2 font-mono text-xs max-w-xs truncate" title={log.destinationUrl}>
                                                 {log.destinationUrl}
                                               </td>
