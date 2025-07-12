@@ -213,6 +213,9 @@ LogGenie is a comprehensive web application designed to assist cybersecurity ope
   - Replaced time range dropdown with company selector and timeline date range selection
   - Fixed backend API to accept startDate/endDate parameters instead of relative time strings
   - Resolved React variable hoisting error with timelineData initialization order
+  - Reorganized anomaly detection page UI into logical sections: "Log Filtering" and "AI Configuration"
+  - Added visual icons and improved layout with two-column design for better usability
+  - Enhanced AI parameter descriptions to help users understand temperature and token settings
 
 ## Changelog
 

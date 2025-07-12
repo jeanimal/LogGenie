@@ -28,6 +28,8 @@ import {
   Download,
   Calendar,
   Clock,
+  Filter,
+  Brain,
 } from "lucide-react";
 
 export default function DetectAnomalies() {
@@ -462,13 +464,14 @@ export default function DetectAnomalies() {
             </p>
           </div>
 
-          {/* Analysis Configuration */}
-          <Card className="mb-8">
+          {/* Log Filtering Section */}
+          <Card className="mb-6">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Detection Configuration
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Filter className="h-5 w-5 mr-2 text-blue-600" />
+                Log Filtering
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2">Company</Label>
                   <Select value={companyFilter} onValueChange={setCompanyFilter}>
@@ -486,7 +489,7 @@ export default function DetectAnomalies() {
                   </Select>
                 </div>
 
-                <div className="col-span-1 md:col-span-1">
+                <div>
                   <div className="flex items-center space-x-2 mb-2">
                     <Clock className="h-4 w-4 text-blue-600" />
                     <Label className="text-sm font-medium text-gray-700">Timeline Filter</Label>
@@ -539,7 +542,18 @@ export default function DetectAnomalies() {
                     </div>
                   )}
                 </div>
+              </div>
+            </CardContent>
+          </Card>
 
+          {/* AI Configuration Section */}
+          <Card className="mb-8">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Brain className="h-5 w-5 mr-2 text-purple-600" />
+                AI Configuration
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2">
                     AI Temperature
@@ -565,6 +579,9 @@ export default function DetectAnomalies() {
                       <SelectItem value="1">1.0 (Very Creative)</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Lower values make the AI more focused and deterministic
+                  </p>
                 </div>
 
                 <div>
@@ -587,6 +604,9 @@ export default function DetectAnomalies() {
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Higher values generate more detailed analysis reports
+                  </p>
                 </div>
               </div>
 
