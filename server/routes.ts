@@ -183,17 +183,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Anomaly detection API with OpenAI integration
   app.post("/api/anomalies/detect", isAuthenticated, async (req, res) => {
     try {
-      const { analysisType, timeRange = '24h', companyId, temperature = 0.2, maxTokens = 2000 } = req.body;
+      const { companyId, startDate, endDate, temperature = 0.2, maxTokens = 2000 } = req.body;
       
       // Get logs for analysis
       const logOptions = {
         page: 1,
-        limit: analysisType === 'sample' ? 50 : 500, // Limit for cost control
+        limit: 500, // Limit for cost control
         companyId: companyId ? parseInt(companyId) : undefined,
-        // Add time range filtering if needed
-        ...(timeRange && timeRange !== 'all' && {
-          startDate: new Date(Date.now() - parseTimeRange(timeRange)),
-          endDate: new Date()
+        // Add date range filtering if provided
+        ...(startDate && endDate && {
+          startDate: new Date(startDate),
+          endDate: new Date(endDate)
         })
       };
       

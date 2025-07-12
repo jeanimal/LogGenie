@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import Sidebar from "@/components/sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -25,13 +26,20 @@ import {
   Plus,
   Minus,
   Download,
+  Calendar,
+  Clock,
 } from "lucide-react";
 
 export default function DetectAnomalies() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
 
-  const [timeRange, setTimeRange] = useState("7d");
+  // Timeline filter state
+  const [companyFilter, setCompanyFilter] = useState("all");
+  const [timelineRange, setTimelineRange] = useState<[number, number]>([0, 100]);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
   const [anomalies, setAnomalies] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [dismissedAnomalies, setDismissedAnomalies] = useState<Set<number>>(
@@ -104,6 +112,53 @@ export default function DetectAnomalies() {
     }
   };
 
+  // Timeline helper functions
+  const getTimelineRange = () => {
+    const data = timelineData as any;
+    if (!data?.earliestTimestamp || !data?.latestTimestamp) {
+      return { min: 0, max: 100, earliest: null, latest: null };
+    }
+    const earliest = new Date(data.earliestTimestamp);
+    const latest = new Date(data.latestTimestamp);
+    return { min: 0, max: 100, earliest, latest };
+  };
+
+  const convertSliderToDate = (value: number) => {
+    const { earliest, latest } = getTimelineRange();
+    if (!earliest || !latest) return null;
+    
+    const range = latest.getTime() - earliest.getTime();
+    const timestamp = earliest.getTime() + (range * value / 100);
+    return new Date(timestamp);
+  };
+
+  const updateDateRange = (sliderValues: [number, number]) => {
+    const startDateObj = convertSliderToDate(sliderValues[0]);
+    const endDateObj = convertSliderToDate(sliderValues[1]);
+    
+    if (startDateObj && endDateObj) {
+      setStartDate(startDateObj.toISOString());
+      setEndDate(endDateObj.toISOString());
+    }
+  };
+
+  // Update timeline when slider changes
+  useEffect(() => {
+    updateDateRange(timelineRange);
+  }, [timelineRange, timelineData]);
+
+  // Query for companies
+  const { data: companies } = useQuery({
+    queryKey: ["/api/companies"],
+    enabled: isAuthenticated,
+  });
+
+  // Query for timeline data
+  const { data: timelineData } = useQuery({
+    queryKey: ["/api/logs/timeline-range", companyFilter === "all" ? "" : companyFilter],
+    enabled: isAuthenticated,
+  });
+
   const updateSortCriterion = (index: number, field: string, order: string) => {
     const newCriteria = [...sortCriteria];
     newCriteria[index] = { field, order };
@@ -128,11 +183,15 @@ export default function DetectAnomalies() {
         reportType: "Cybersecurity Anomaly Detection Report",
         analysisConfiguration: {
           analysisType: "full",
-          sensitivity: "medium", 
-          timeRange,
+          sensitivity: "medium",
           aiConfiguration: {
             temperature,
             maxTokens,
+          },
+          companyFilter,
+          dateRange: {
+            startDate,
+            endDate,
           },
         },
         sortingCriteria: sortCriteria,
@@ -204,9 +263,9 @@ export default function DetectAnomalies() {
 
   const anomalyDetectionMutation = useMutation({
     mutationFn: async (params: {
-      analysisType: string;
-      sensitivity: string;
-      timeRange: string;
+      companyId?: string;
+      startDate?: string;
+      endDate?: string;
       temperature: number;
       maxTokens: number;
     }) => {
@@ -284,13 +343,21 @@ export default function DetectAnomalies() {
   });
 
   const handleRunDetection = () => {
-    anomalyDetectionMutation.mutate({
-      analysisType: "full", // Always use full analysis
-      sensitivity: "medium", // Always use medium/balanced sensitivity
-      timeRange,
+    const params: any = {
       temperature,
       maxTokens,
-    });
+    };
+    
+    if (companyFilter !== "all") {
+      params.companyId = companyFilter;
+    }
+    
+    if (startDate && endDate) {
+      params.startDate = startDate;
+      params.endDate = endDate;
+    }
+    
+    anomalyDetectionMutation.mutate(params);
   };
 
   const getSeverityBadge = (severity: string) => {
@@ -403,19 +470,74 @@ export default function DetectAnomalies() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2">
-                    Time Range
-                  </Label>
-                  <Select value={timeRange} onValueChange={setTimeRange}>
+                  <Label className="text-sm font-medium text-gray-700 mb-2">Company</Label>
+                  <Select value={companyFilter} onValueChange={setCompanyFilter}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="All Companies" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="24h">Last 24 Hours</SelectItem>
-                      <SelectItem value="7d">Last 7 Days</SelectItem>
-                      <SelectItem value="30d">Last 30 Days</SelectItem>
+                      <SelectItem value="all">All Companies</SelectItem>
+                      {(companies as any)?.map((company: any) => (
+                        <SelectItem key={company.id} value={company.id.toString()}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="col-span-1 md:col-span-1">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                    <Label className="text-sm font-medium text-gray-700">Timeline Filter</Label>
+                  </div>
+                  
+                  {(timelineData as any)?.earliestTimestamp && (timelineData as any)?.latestTimestamp ? (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs font-medium text-gray-700">
+                          <span>Start Time</span>
+                          <span>End Time</span>
+                        </div>
+                        
+                        <Slider
+                          value={timelineRange}
+                          onValueChange={(value) => {
+                            setTimelineRange(value as [number, number]);
+                          }}
+                          max={100}
+                          min={0}
+                          step={1}
+                          className="w-full"
+                        />
+                        
+                        <div className="flex justify-between text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                          <div className="flex items-center">
+                            <Calendar className="h-3 w-3 mr-1 text-blue-500" />
+                            <span className="font-medium">From:</span>
+                            <span className="ml-1">{convertSliderToDate(timelineRange[0])?.toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <Calendar className="h-3 w-3 mr-1 text-blue-500" />
+                            <span className="font-medium">To:</span>
+                            <span className="ml-1">{convertSliderToDate(timelineRange[1])?.toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="text-xs text-gray-400 text-center border-t pt-2">
+                        Total range: {new Date((timelineData as any).earliestTimestamp).toLocaleDateString()} 
+                        → {new Date((timelineData as any).latestTimestamp).toLocaleDateString()}
+                        <div className="mt-1">
+                          <span className="text-blue-600 font-medium">{(timelineData as any).totalLogs}</span> total logs
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-400 py-4">
+                      Loading timeline data...
+                    </div>
+                  )}
                 </div>
 
                 <div>
