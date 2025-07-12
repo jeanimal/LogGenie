@@ -184,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/anomalies/detect", isAuthenticated, async (req, res) => {
     try {
       console.log("[DEBUG] Anomaly detection endpoint hit");
-      const { analysisType, timeRange = 'all', companyId, temperature = 0.2, maxTokens = 2000 } = req.body;
+      const { analysisType, timeRange = '24h', companyId, temperature = 0.2, maxTokens = 2000 } = req.body;
       console.log("[DEBUG] Request params:", { analysisType, timeRange, companyId, temperature, maxTokens });
       
       // Get logs for analysis
